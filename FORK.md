@@ -1,6 +1,9 @@
 # Using this fork
 
-`kool277/angular` is a fork of [angular/angular](https://github.com/angular/angular), the source code of the Angular framework. It has no changes of its own: apart from this guide, its `main` branch follows upstream's `main`. Use it to build Angular from source, experiment with changes, and send pull requests to Angular.
+`kool277/angular` is a fork of [angular/angular](https://github.com/angular/angular), the source code of the Angular framework. Use it to build Angular from source, experiment with changes, run your apps on fixes before Angular releases them, and send pull requests to Angular.
+
+- `main` follows upstream's `main` and has no changes of its own.
+- `fix/bugs-and-easy-docs-22.2-2026-11-12` is Angular **v22.2.6** plus a few fixes ([FIXES.md](FIXES.md)), tools that put your apps on that build ([fork-tools/](fork-tools/README.md)), and a beginner guide to Angular ([easy-docs/](easy-docs/README.md)). Everything that exists only in this fork lives in new files (`FORK.md`, `CLAUDE.md`, `FIXES.md`, `fork-tools/`, `easy-docs/`), so updating from upstream never conflicts.
 
 This guide is about working on the framework itself. To build applications with Angular, see [angular.dev](https://angular.dev).
 
@@ -22,11 +25,13 @@ This guide is about working on the framework itself. To build applications with 
 
 ## Requirements
 
-| Tool    | Version | Where it's set                                                                                                  |
-| ------- | ------- | --------------------------------------------------------------------------------------------------------------- |
-| Node.js | 24.22.2 | `.nvmrc`, which `nvm install` and `nvm use` read                                                                |
-| pnpm    | 12.16.1 | `packageManager` in `package.json`; npm and Yarn refuse to install                                              |
-| Bazel   | 8.8.2   | `.bazelversion`. You don't install it yourself: `pnpm install` provides bazelisk, which you run as `pnpm bazel` |
+Each branch pins its own versions, so read them from the files of the branch you are on:
+
+| Tool    | Where it's set                                                                                                  | `main` (2026-11) | `fix/...-22.2-...` (v22.2.6) |
+| ------- | --------------------------------------------------------------------------------------------------------------- | ---------------- | ---------------------------- |
+| Node.js | `.nvmrc`, which `nvm install` and `nvm use` read                                                                | 24.22.2          | 24.21.0                      |
+| pnpm    | `packageManager` in `package.json`; npm and Yarn refuse to install                                              | 12.16.1          | 11.28.11                     |
+| Bazel   | `.bazelversion`. You don't install it yourself: `pnpm install` provides bazelisk, which you run as `pnpm bazel` | 8.8.2            | 8.8.2                        |
 
 Instead of installing these yourself, you can work in a Docker container with VS Code. [.devcontainer/README.md](.devcontainer/README.md) explains how: copy its `recommended-Dockerfile` and `recommended-devcontainer.json` to `Dockerfile` and `devcontainer.json`, then reopen the folder in the container.
 
@@ -71,6 +76,49 @@ The linked packages are symbolic links, so start the Angular CLI with Node's `--
 ```bash
 node --preserve-symlinks --preserve-symlinks-main node_modules/@angular/cli/lib/init.js serve
 ```
+
+## Put an app on the fork
+
+On the `fix/...` branch, from a commit with no uncommitted changes:
+
+```bash
+pnpm install
+pnpm build                                   # dist/packages-dist, version 22.2.6+sha-<commit>
+node fork-tools/pack.mjs                     # dist/fork-tarballs/*.tgz
+node fork-tools/use.mjs ../path/to/your-app  # switch the app, install, check
+```
+
+`use.mjs` copies the tarballs to `vendor/angular-fork/` in the app and points the app's `@angular/*` packages that this repository builds at them, with npm `overrides`, pnpm `overrides` or Yarn `resolutions`. The Angular CLI, `@angular/build`, CDK and Material stay on npm. The app must already be on Angular 22.2; otherwise `use.mjs` stops and names the `ng update` command to run first. Afterwards `ng version` in the app shows `22.2.6+sha-<commit>`. [fork-tools/README.md](fork-tools/README.md) has the details, and [fork-tools/fix-demos/](fork-tools/fix-demos/README.md) has one test per fix that you can copy into an app to see the difference.
+
+## Go back to stock Angular
+
+```bash
+node fork-tools/restore.mjs ../path/to/your-app
+```
+
+It restores the app's original version ranges, overrides and lockfile, removes `vendor/angular-fork/` and installs again.
+
+## Move the fixes to a newer Angular release
+
+The `fix/...` branch is a release tag plus the fork's commits, so moving it means rebasing those commits onto the next tag. Do it on a new branch, so the old one keeps working:
+
+```bash
+git fetch upstream tag v22.2.7 --no-tags      # the next release of the same line
+git switch -c fix/bugs-and-easy-docs-22.2-<date> fix/bugs-and-easy-docs-22.2-2026-11-12
+git rebase --onto v22.2.7 v22.2.6
+```
+
+- If a fix is already in the new release, the rebase stops on it or leaves the commit empty: drop it (`git rebase --skip`) and remove its row from FIXES.md.
+- Use the Node.js, pnpm and Bazel versions that the new tag pins, run `pnpm install`, and run the gate in FIXES.md again: `pnpm test //packages/...`, `pnpm public-api:check`, `pnpm build`, then `use.mjs` on your apps.
+- For a new minor or major line (for example 22.3), the same works with that line's first release tag, but expect conflicts and move your apps with `ng update` first.
+- Don't name a branch `main` or like `22.2.x`: those names start Angular's CI and release workflows.
+
+## Share the build with CI or other machines
+
+`use.mjs` only changes the machine it runs on, unless you share the tarballs. Two ways, neither of which this fork sets up for you:
+
+1. **Commit `vendor/angular-fork/` in the app.** The app's `package.json` and lockfile already point at those files through relative `file:` paths, so a clone of the app installs the same build anywhere, CI included. The tarballs add about 15 MB to the app's repository, and every update of the fork adds that again.
+2. **Publish snapshot repositories.** Upstream's `scripts/ci/publish-snapshot-build-artifacts.sh` pushes each built package to a GitHub repository such as `<you>/core-builds` (see [Building and Testing Angular](contributing-docs/building-and-testing-angular.md#publishing-snapshot-builds)). Apps then depend on `github:<you>/core-builds#<branch>`. It needs a GitHub token and creates one repository per package, so only do it on purpose.
 
 ## Keeping the fork up to date
 
@@ -122,6 +170,10 @@ If you enable them, keep in mind:
 - `ci.yml`, `release.yml`, `perf.yml` and `cross-repo-adev-docs.yml` run on pushes to `main` and to version branches named like `<major>.<minor>.x`. Branches with other names don't trigger them.
 - `release.yml`, `ci.yml`, `dev-infra.yml`, `benchmark-compare.yml` and `adev-preview-deploy.yml` use Angular's secrets, such as `WOMBOT_TOKEN` and `ANGULAR_ROBOT_PRIVATE_KEY`, which a fork doesn't have, so the jobs that need them fail. `release.yml` runs Angular's release tooling, so disable it in the Actions tab rather than let it run.
 - `assistant-to-the-branch-manager.yml` and `cross-repo-adev-docs.yml` check whether they run in Angular's own repository, and skip their jobs on a fork.
+
+## The easy guide
+
+[easy-docs/](easy-docs/README.md) is a beginner guide to Angular 22.2, written from this branch's official docs, with a tested example for every idea. `node fork-tools/check-docs.mjs` checks that its code matches the examples.
 
 ## Coding agents
 

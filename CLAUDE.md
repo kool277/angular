@@ -6,9 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## This fork
 
-`kool277/angular` is a fork of `angular/angular` with no code changes of its own. [FORK.md](FORK.md) explains how to build it, keep it in sync and send changes upstream. In short:
+`kool277/angular` is a fork of `angular/angular`. Its `main` has no code changes of its own; branches named `fix/...` are an Angular release tag plus fixes listed in [FIXES.md](FIXES.md), with tools in `fork-tools/` and a beginner guide in `easy-docs/`. [FORK.md](FORK.md) explains how to build it, put an app on it, keep it in sync and send changes upstream. In short:
 
 - Start changes meant for Angular from `upstream/main` (run `git fetch upstream` first; this clone hasn't fetched it), and keep fork-only files such as `FORK.md` and this file out of them.
+- Keep fork-only work in new files (`FORK.md`, `CLAUDE.md`, `FIXES.md`, `fork-tools/`, `easy-docs/`); never edit `adev/`, `.github/` or `CHANGELOG.md` for it. A fix commit holds only framework code and its test, and no issue references (they go in FIXES.md).
+- `public-api:check` and `symbol-extractor:check` need a terminal: without one, run them as `script -qec "pnpm public-api:check" /dev/null`. `pnpm ng-dev format changed` also checks untracked files; use `pnpm ng-dev format files --check <files>` for a commit's files.
 - In a fork, `gh pr create` targets `angular/angular` by default. Pass `--repo kool277/angular` for a pull request inside the fork, and only open one on `angular/angular` when asked to.
 
 ## Commands
