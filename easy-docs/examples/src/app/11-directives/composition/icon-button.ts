@@ -1,6 +1,6 @@
+// #docregion parts
 import {Component, Directive, input, output, signal} from '@angular/core';
 
-// #docregion parts
 @Directive({
   selector: '[appTooltip]',
   host: {
@@ -54,6 +54,7 @@ export class DirIconButton {
 }
 // #enddocregion component
 
+// #docregion demo
 @Component({
   selector: 'app-icon-button-demo',
   imports: [DirIconButton],
@@ -70,3 +71,4 @@ export class DirIconButton {
 export class DirIconButtonDemo {
   readonly deleted = signal(false);
 }
+// #enddocregion demo

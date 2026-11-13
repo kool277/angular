@@ -20,8 +20,8 @@ export class PipesDownloads {
     {
       id: 1,
       name: 'holiday photos',
-      bytes: 3_450_000,
-      added: new Date(Date.UTC(2026, 10, 2, 14, 5)),
+      bytes: 3_450_000, // the _ only makes the number easier to read: 3450000
+      added: new Date(Date.UTC(2026, 10, 2, 14, 5)), // month 10 is November (months start at 0)
       done: 1,
     },
     {

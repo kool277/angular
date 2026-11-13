@@ -12,7 +12,6 @@ export class ProjVote {
   readonly votes = signal(0);
 }
 
-// #docregion poll
 @Component({
   selector: 'app-proj-poll',
   imports: [ProjVote],
@@ -31,4 +30,3 @@ export class ProjPoll {
     this.options().reduce((sum, option) => sum + option.votes(), 0),
   );
 }
-// #enddocregion poll

@@ -1,5 +1,7 @@
+// #docregion imports
 import {TestBed} from '@angular/core/testing';
 import {TestingToast} from './toast';
+// #enddocregion imports
 
 describe('TestingToast', () => {
   // #docregion fake-timers

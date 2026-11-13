@@ -40,7 +40,7 @@ A badge that shows a user's name and role. The parent decides what to show.
 import {Component, input} from '@angular/core';
 
 @Component({
-  selector: 'app-user-badge',
+  selector: 'app-role-badge',
   template: `<p>{{ name() }} ({{ role() }})</p>`,
 })
 export class InputsUserBadge {
@@ -49,11 +49,11 @@ export class InputsUserBadge {
 }
 
 @Component({
-  selector: 'app-user-badge-demo',
+  selector: 'app-role-badge-demo',
   imports: [InputsUserBadge],
   template: `
-    <app-user-badge name="Aziza" role="admin" />
-    <app-user-badge [name]="visitor" />
+    <app-role-badge name="Aziza" role="admin" />
+    <app-role-badge [name]="visitor" />
   `,
 })
 export class InputsUserBadgeDemo {
@@ -67,12 +67,14 @@ export class InputsUserBadgeDemo {
 | `{{ name() }} ({{ role() }})`                  | An input is a signal. You read it by calling it, like in [chapter 07](07-signals.md).                              |
 | `readonly name = input.required<string>();`    | Declares a **required** input of type `string`. Every parent must give it a value.                                 |
 | `readonly role = input('guest');`              | Declares an input with the default value `'guest'`. A parent may leave it out.                                     |
-| `imports: [InputsUserBadge]`                   | The parent imports the child so that it can use `<app-user-badge>`.                                                |
-| `<app-user-badge name="Aziza" role="admin" />` | Sets both inputs with fixed text, like HTML attributes.                                                            |
-| `<app-user-badge [name]="visitor" />`          | Sets `name` with property binding to the parent's field `visitor`. `role` is not set, so the badge uses `'guest'`. |
+| `imports: [InputsUserBadge]`                   | The parent imports the child so that it can use `<app-role-badge>`.                                                |
+| `<app-role-badge name="Aziza" role="admin" />` | Sets both inputs with fixed text, like HTML attributes.                                                            |
+| `<app-role-badge [name]="visitor" />`          | Sets `name` with property binding to the parent's field `visitor`. `role` is not set, so the badge uses `'guest'`. |
 | `visitor = 'Timur';`                           | A field of the parent.                                                                                             |
 
 The page shows "Aziza (admin)" and "Timur (guest)".
+
+[Chapter 4](04-components.md#4-smallest-example) also had a badge, with the selector `app-user-badge`. This one is called `app-role-badge`, so that you can keep both in one app: every selector in an app should be unique.
 
 ## 5. How it works
 
@@ -151,6 +153,48 @@ The parent template:
 
 A transform should only use its argument and return a result, without side effects. Use aliases rarely: two names for one thing can confuse readers.
 
+Here is the whole file: the import line (`numberAttribute` and `booleanAttribute` come from `@angular/core`), the card with its template, and the parent `InputsProductCardDemo`:
+
+<!-- example: src/app/08-inputs-outputs-model/product-card/product-card.ts -->
+
+```ts
+import {booleanAttribute, Component, computed, input, numberAttribute} from '@angular/core';
+
+function trimText(value: string | undefined): string {
+  return value?.trim() ?? '';
+}
+
+@Component({
+  selector: 'app-product-card',
+  template: `
+    <h3>{{ name() }}</h3>
+    <p class="price">{{ priceText() }}</p>
+    @if (onSale()) {
+      <p class="sale">On sale!</p>
+    }
+    <p class="note">{{ note() }}</p>
+  `,
+})
+export class InputsProductCard {
+  readonly name = input.required<string>();
+  readonly price = input(0, {transform: numberAttribute});
+  readonly onSale = input(false, {transform: booleanAttribute});
+  readonly note = input('', {transform: trimText, alias: 'comment'});
+
+  readonly priceText = computed(() => `${this.price().toFixed(2)} €`);
+}
+
+@Component({
+  selector: 'app-product-card-demo',
+  imports: [InputsProductCard],
+  template: `
+    <app-product-card name="Green tea" price="3.5" onSale comment="  Fresh from Fergana  " />
+    <app-product-card name="Honey" [price]="7" />
+  `,
+})
+export class InputsProductCardDemo {}
+```
+
 ### Outputs
 
 `output()` creates a custom event on the child. The child calls `emit(value)` to fire it. The type in angle brackets is the type of the value that the event carries.
@@ -174,11 +218,50 @@ The parent listens with event binding, like for `click`. `$event` is the value t
 <p>{{ message() }}</p>
 ```
 
-When the user clicks the fourth star, the page shows "Thank you for 4 stars!". The whole file is `src/app/08-inputs-outputs-model/star-rating/star-rating.ts`.
+When the user clicks the fourth star, the page shows "Thank you for 4 stars!". Here is the whole file, with the stars' template and the parent:
 
-- Custom events do not bubble up the page like DOM events. Only the direct parent can listen.
+<!-- example: src/app/08-inputs-outputs-model/star-rating/star-rating.ts -->
+
+```ts
+import {Component, output, signal} from '@angular/core';
+
+@Component({
+  selector: 'app-star-rating',
+  template: `
+    @for (star of stars; track star) {
+      <button type="button" (click)="rate(star)">{{ star }}★</button>
+    }
+  `,
+})
+export class InputsStarRating {
+  readonly stars = [1, 2, 3, 4, 5];
+  readonly rated = output<number>();
+
+  rate(star: number) {
+    this.rated.emit(star);
+  }
+}
+
+@Component({
+  selector: 'app-star-rating-demo',
+  imports: [InputsStarRating],
+  template: `
+    <app-star-rating (rated)="onRated($event)" />
+    <p>{{ message() }}</p>
+  `,
+})
+export class InputsStarRatingDemo {
+  readonly message = signal('Please rate this book.');
+
+  onRated(stars: number) {
+    this.message.set(`Thank you for ${stars} stars!`);
+  }
+}
+```
+
+- Many DOM events **bubble**: after a `click` on a button, the browser also tells the button's parent elements, up to the top of the page. Custom events do not do this. Only the direct parent (the template that contains `<app-star-rating>`) can listen.
 - Use `output<void>()` for an event without a value, and call `emit()` with no argument.
-- Name events in camelCase (`rated`, `itemRemoved`) and do not start the name with `on`.
+- Name events in **camelCase**: the first word starts with a small letter, every next word with a capital letter (`rated`, `itemRemoved`). Do not start the name with `on`.
 - `output({ alias: 'otherName' })` gives an output another name in templates, as for inputs.
 
 ### `model` and two-way binding
@@ -202,7 +285,7 @@ In the parent, write the binding with square brackets around round brackets: `[(
 ```html
 <app-quantity-picker [(value)]="quantity" />
 <p class="total">Total: {{ quantity() * 2 }} €</p>
-<button class="ten" (click)="quantity.set(10)">Order 10</button>
+<button type="button" class="ten" (click)="quantity.set(10)">Order 10</button>
 ```
 
 - `quantity` is a signal in the parent. Notice that you write `quantity`, **not** `quantity()`: you give the child the signal itself, so the child can write into it.
@@ -223,6 +306,46 @@ For every model, Angular also creates an output whose name ends with `Change`. H
 
 `model.required<T>()` and the `alias` option work like for inputs. A model has no transform.
 
+Here is the whole file, with the picker's template and the parent `InputsQuantityDemo`:
+
+<!-- example: src/app/08-inputs-outputs-model/quantity/quantity-picker.ts -->
+
+```ts
+import {Component, model, signal} from '@angular/core';
+
+@Component({
+  selector: 'app-quantity-picker',
+  template: `
+    <button type="button" (click)="change(-1)">−</button>
+    <span>{{ value() }}</span>
+    <button type="button" (click)="change(1)">+</button>
+  `,
+})
+export class InputsQuantityPicker {
+  readonly value = model(1);
+
+  change(amount: number) {
+    this.value.update((old) => Math.max(0, old + amount));
+  }
+}
+
+@Component({
+  selector: 'app-quantity-demo',
+  imports: [InputsQuantityPicker],
+  template: `
+    <app-quantity-picker [(value)]="quantity" />
+    <p class="total">Total: {{ quantity() * 2 }} €</p>
+    <button type="button" class="ten" (click)="quantity.set(10)">Order 10</button>
+    <app-quantity-picker [value]="3" (valueChange)="lastChange = $event" />
+    <p class="last">Last change: {{ lastChange }}</p>
+  `,
+})
+export class InputsQuantityDemo {
+  readonly quantity = signal(2);
+  lastChange = 0;
+}
+```
+
 Use `model` when the purpose of a component is to change a value: a counter, a toggle, a date picker, a custom form field. For other data, use `input` for data that goes down and `output` for events that go up. You will also see `[(ngModel)]` on `<input>` elements. That is two-way binding with the forms package, explained in [Forms](16-forms.md).
 
 ### In older code: `@Input` and `@Output`
@@ -239,7 +362,7 @@ import {Component, EventEmitter, Input, Output} from '@angular/core';
   selector: 'app-old-panel',
   template: `
     <h3>{{ title }}</h3>
-    <button (click)="closed.emit()">Close</button>
+    <button type="button" (click)="closed.emit()">Close</button>
   `,
 })
 export class InputsOldPanel {
@@ -302,7 +425,7 @@ import {Todo} from './todo';
       <input type="checkbox" [checked]="todo().done" (change)="toggled.emit(todo().id)" />
       {{ todo().title }}
     </label>
-    <button (click)="removed.emit(todo().id)">Delete</button>
+    <button type="button" (click)="removed.emit(todo().id)">Delete</button>
   `,
   styles: `
     .done {
@@ -327,7 +450,7 @@ import {TodoFilter} from './todo';
   selector: 'app-todo-filter',
   template: `
     @for (option of options; track option) {
-      <button [class.active]="filter() === option" (click)="filter.set(option)">
+      <button type="button" [class.active]="filter() === option" (click)="filter.set(option)">
         {{ option }}
       </button>
     }
@@ -413,11 +536,15 @@ This pattern is called "data down, events up". Only one component owns each piec
 
 ### Forgetting a required input
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
-<app-user-badge role="admin" />
+<app-role-badge role="admin" />
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] NG8008: Required input 'name' from component InputsUserBadge must be specified. [plugin angular-compiler]
@@ -431,7 +558,7 @@ Fix: give every required input a value:
 import {Component, input} from '@angular/core';
 
 @Component({
-  selector: 'app-user-badge',
+  selector: 'app-role-badge',
   template: `<p>{{ name() }} ({{ role() }})</p>`,
 })
 export class InputsUserBadge {
@@ -440,11 +567,11 @@ export class InputsUserBadge {
 }
 
 @Component({
-  selector: 'app-user-badge-demo',
+  selector: 'app-role-badge-demo',
   imports: [InputsUserBadge],
   template: `
-    <app-user-badge name="Aziza" role="admin" />
-    <app-user-badge [name]="visitor" />
+    <app-role-badge name="Aziza" role="admin" />
+    <app-role-badge [name]="visitor" />
   `,
 })
 export class InputsUserBadgeDemo {
@@ -454,16 +581,20 @@ export class InputsUserBadgeDemo {
 
 ### A wrong input name
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
-<app-user-badge [nme]="'Aziza'" />
+<app-role-badge [nme]="'Aziza'" />
 ```
 
+<!-- prettier-ignore-end -->
+
 ```text
-✘ [ERROR] NG8002: Can't bind to 'nme' since it isn't a known property of 'app-user-badge'.
-1. If 'app-user-badge' is an Angular component and it has 'nme' input, then verify that it is included in the '@Component.imports' of this component.
-2. If 'app-user-badge' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@Component.schemas' of this component to suppress this message.
+✘ [ERROR] NG8002: Can't bind to 'nme' since it isn't a known property of 'app-role-badge'.
+1. If 'app-role-badge' is an Angular component and it has 'nme' input, then verify that it is included in the '@Component.imports' of this component.
+2. If 'app-role-badge' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@Component.schemas' of this component to suppress this message.
 3. To allow any property add 'NO_ERRORS_SCHEMA' to the '@Component.schemas' of this component. Find more at https://next.angular.dev/errors/NG8002 [plugin angular-compiler]
 ```
 
@@ -471,11 +602,15 @@ The same error appears when the name is right but the child is missing from the 
 
 ### Calling the signal in a two-way binding
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 <app-quantity-picker [(value)]="quantity()" />
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] NG5002: Unsupported expression in a two-way binding [plugin angular-compiler]
@@ -488,10 +623,12 @@ The same error appears when the name is right but the child is missing from the 
 ```html
 <app-quantity-picker [(value)]="quantity" />
 <p class="total">Total: {{ quantity() * 2 }} €</p>
-<button class="ten" (click)="quantity.set(10)">Order 10</button>
+<button type="button" class="ten" (click)="quantity.set(10)">Order 10</button>
 ```
 
 ### Trying to change an input inside the child
+
+<!-- prettier-ignore-start -->
 
 <!-- wrong -->
 
@@ -502,6 +639,8 @@ clear() {
   this.name.set('');
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] TS2339: Property 'set' does not exist on type 'InputSignal<string>'. [plugin angular-compiler]
@@ -523,7 +662,7 @@ change(amount: number) {
 
 Build a like button `InputsLikeButton`:
 
-1. An input `label` with the default value `'Like'`.
+1. Use the selector `app-like-toggle` (chapter 1 already has an `app-like-button`). An input `label` with the default value `'Like'`.
 2. A model `liked` with the default `false`.
 3. The button shows `♥` when liked and `♡` when not, followed by the label. A click switches `liked`.
 4. In a parent `InputsLikeDemo`, show two like buttons bound with `[(liked)]` to two signals, and a line "You like N recipes." that counts the liked ones.
@@ -536,9 +675,9 @@ Build a like button `InputsLikeButton`:
 import {Component, computed, input, model, signal} from '@angular/core';
 
 @Component({
-  selector: 'app-like-button',
+  selector: 'app-like-toggle',
   template: `
-    <button [class.liked]="liked()" (click)="liked.set(!liked())">
+    <button type="button" [class.liked]="liked()" (click)="liked.set(!liked())">
       {{ liked() ? '♥' : '♡' }} {{ label() }}
     </button>
   `,
@@ -552,8 +691,8 @@ export class InputsLikeButton {
   selector: 'app-like-demo',
   imports: [InputsLikeButton],
   template: `
-    <app-like-button label="Plov recipe" [(liked)]="likesPlov" />
-    <app-like-button label="Somsa recipe" [(liked)]="likesSomsa" />
+    <app-like-toggle label="Plov recipe" [(liked)]="likesPlov" />
+    <app-like-toggle label="Somsa recipe" [(liked)]="likesSomsa" />
     <p>You like {{ count() }} recipes.</p>
   `,
 })

@@ -79,13 +79,17 @@ export class BuildApiBanner {
 | `apiUrl = environment.apiUrl;`                              | Reads a setting like any other value.                                                                                 |
 | `isDevMode()`                                               | A function from `@angular/core`. It returns `true` in development builds and tests, and `false` in production builds. |
 
-You do not write these files by hand. This command creates `src/environments/environment.ts` and `environment.development.ts` and adds the swap to `angular.json`:
+You do not create these files by hand. This command creates them:
 
 ```shell
 ng generate environments
 ```
 
-The swap that it adds to the `development` configuration of the `build` target is called **file replacement**:
+It creates `src/environments/environment.ts`, and one more file for every configuration of the `build` target except the default one (`production`). In a new app that is `environment.development.ts`. If you added the `uz` configuration in [chapter 24](24-i18n.md), you also get `environment.uz.ts`. Each new file contains only `export const environment = {};`. Fill the two files with the settings shown above.
+
+Where is the import path from? In the examples workspace of this guide, the `environments` folder sits next to the component folder, so the path is `'../environments/environment'`. In your app the folder is `src/environments/`. Count the folders from your component file: a component in `src/app/` imports `'../environments/environment'`, a component in `src/app/api-banner/` imports `'../../environments/environment'`.
+
+The command also adds a swap to the `development` configuration of the `build` target in `angular.json`. It is called **file replacement**:
 
 <!-- example: src/app/26-build-configure-deploy-update/config/file-replacements.json -->
 
@@ -107,7 +111,7 @@ The swap that it adds to the `development` configuration of the `build` target i
 }
 ```
 
-This guide's workspace has no file replacement (its `angular.json` stays unchanged), so the test sees the base values:
+Which file does a test see? `ng test` builds your app with the `development` configuration (unless the `test` target in `angular.json` sets another `buildTarget`). So in your app, after `ng generate environments`, the file replacement works in tests too: `environment` is the **development** file, and the banner shows `http://localhost:3000`. This guide's workspace has no file replacement (its `angular.json` stays unchanged), so here the test sees the base values. The test compares the page with `environment.apiUrl`, so it passes in both places:
 
 <!-- example: src/app/26-build-configure-deploy-update/api-banner/api-banner.spec.ts -->
 
@@ -121,11 +125,9 @@ describe('BuildApiBanner', () => {
     const fixture = TestBed.createComponent(BuildApiBanner);
     await fixture.whenStable();
     const page = fixture.nativeElement as HTMLElement;
-    // This workspace has no fileReplacements, so the base file is used.
-    expect(environment.apiUrl).toBe('https://api.silkroad-museum.example');
-    expect(page.querySelector('.api')?.textContent).toBe(
-      'Data comes from https://api.silkroad-museum.example',
-    );
+    // `environment` is the file that this build uses: in a project with
+    // file replacements, `ng test` uses the development file.
+    expect(page.querySelector('.api')?.textContent).toBe(`Data comes from ${environment.apiUrl}`);
   });
 
   it('knows that tests run in development mode', async () => {
@@ -135,6 +137,8 @@ describe('BuildApiBanner', () => {
   });
 });
 ```
+
+In your app you can add `expect(environment.apiUrl).toBe('http://localhost:3000');` to the first test, to see that the test uses the development file.
 
 > **Warning:** environment files become part of the JavaScript that every user downloads. Anyone can read them. Never put passwords, private API keys or other secrets in them ([Security](25-security.md)).
 
@@ -295,15 +299,15 @@ Three things to get right:
 
 1. **Fallback to `index.html`.** The user opens `https://museum.example/tickets/42` directly or presses reload. The browser asks the server for `/tickets/42`, and there is no such file. Configure the server to answer with `index.html` for unknown paths (many hosts call this "SPA mode"). The Angular router then reads the URL and shows the right page. With prerendering (`outputMode: "static"`) the fallback file is `index.csr.html`.
 2. **Base href.** If the app lives in a sub-folder such as `https://example.com/museum/`, the `<base href>` must be `/museum/`, or no file is found. Build with `ng build --base-href /museum/`.
-3. **CORS.** If your API is on another domain, the browser blocks the requests unless the **API server** allows your domain. The app cannot fix this; the server must send the right headers.
+3. **CORS** (Cross-Origin Resource Sharing). A **domain** is the name part of an address, such as `museum.example`. If your API is on another domain than your app, the browser blocks the requests unless the **API server** allows your domain. CORS is the set of rules for this. The app cannot fix this; the server must send the right headers.
 
 With server rendering (`outputMode: "server"`), you copy both `browser/` and `server/` and start the server with Node.js: `node dist/my-app/server/server.mjs`.
 
-`ng deploy` automates all this for some hosts. You first add a package that knows the host, for example `ng add @angular/fire` for Firebase Hosting or `ng add angular-cli-ghpages` for GitHub Pages. It adds a `deploy` target to `angular.json`; afterwards `ng deploy` builds and uploads in one step. These packages come from other teams, not from Angular.
+`ng deploy` automates all this for some hosts. You first add a package that knows the host, for example `ng add @angular/fire` for Firebase Hosting or `ng add angular-cli-ghpages` for GitHub Pages (two services that host web apps). It adds a `deploy` target to `angular.json`; afterwards `ng deploy` builds and uploads in one step. These packages come from other teams, not from Angular.
 
 ### One build for every server: runtime configuration
 
-Environment files are fixed at build time: a staging server and a production server need two different builds. Some teams want **one** build that works everywhere. Then the app loads its settings when it starts, from a file that each server provides, such as `/config.json`:
+Environment files are fixed at build time: a staging server and a production server need two different builds. (A **staging** server is a copy of the real server. The team tests a new version there before real users get it.) Some teams want **one** build that works everywhere. Then the app loads its settings when it starts, from a file that each server provides, such as `/config.json`:
 
 <!-- example: src/app/26-build-configure-deploy-update/runtime-config/runtime-config.ts -->
 
@@ -389,18 +393,22 @@ ng update @angular/core@23 @angular/cli@23    # update to the next major version
 
 - Update **one major version at a time** (21 → 22 → 23), not several at once.
 - `ng update` changes `package.json`, installs the packages and runs **migrations**: small programs that change your code for you, for example to replace a removed API.
-- Start with a clean git state, so you can see and undo every change. Then run your tests and build.
+- If you use **Git** (a tool that saves versions of your files; `ng new` sets it up for you), save all your changes in Git first (a **commit**). Then you can see and undo every change that the update makes. After the update, run your tests and build.
 - The interactive **Angular Update Guide** (https://angular.dev/update-guide) lists all manual steps for your "from" and "to" versions.
 
 ## 7. Common mistakes
 
 ### A wrong path to the environment file
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
 import {environment} from '../environment/environment';
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] TS2307: Cannot find module '../environment/environment' or its corresponding type declarations. [plugin angular-compiler]
@@ -431,11 +439,15 @@ export class BuildApiBanner {
 
 ### Importing the development file directly
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
 import {environment} from '../environments/environment.development';
 ```
+
+<!-- prettier-ignore-end -->
 
 There is no error. But now **every** build, including production, uses `http://localhost:3000`, and the real app cannot reach its API. Always import `environment` (the base file) and let file replacement choose.
 
@@ -456,6 +468,8 @@ There is no Angular error. The first page works, links inside the app work, but 
 
 ### Putting secrets in environment files
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -465,26 +479,65 @@ export const environment = {
 };
 ```
 
+<!-- prettier-ignore-end -->
+
 There is no error, and that is the danger: the key is in the built JavaScript, and anyone can read it with the browser's developer tools. Keep secrets on the server. The app should only call your own server, which uses the secret.
 
 ## 8. Try it yourself
 
-Add a `staging` environment: a file `environment.staging.ts` with the API `https://staging-api.silkroad-museum.example` and the debug panel on, and the `angular.json` configuration that swaps it in for `ng build --configuration staging`. Make TypeScript check that the staging file has the same keys as the base file. Write a test.
+Add a `staging` environment (for a staging server, see part 6): a file `src/environments/environment.staging.ts` with the API `https://staging-api.silkroad-museum.example` and the debug panel on, and the `angular.json` configuration that swaps it in for `ng build --configuration staging`. Make TypeScript check that every environment file has the same keys. Write a test, and run `ng build -c staging` to check that the build works.
 
 <details><summary>Solution</summary>
 
-<!-- example: src/app/26-build-configure-deploy-update/exercise/environment.staging.ts -->
+The files of the solution are in [`exercise/environments/`](examples/src/app/26-build-configure-deploy-update/exercise/environments/); in your app they go into `src/environments/`. First describe the shape of the settings once, in its own file, with an interface ([chapter 3](03-typescript-you-need.md)):
+
+<!-- example: src/app/26-build-configure-deploy-update/exercise/environments/environment-type.ts -->
 
 ```ts
-import {environment as production} from '../environments/environment';
+/** The settings that every environment file must have. */
+export interface Environment {
+  apiUrl: string;
+  showDebugPanel: boolean;
+}
+```
 
-export const environment: typeof production = {
+Every environment file uses this type. The base file:
+
+<!-- example: src/app/26-build-configure-deploy-update/exercise/environments/environment.ts -->
+
+```ts
+import {Environment} from './environment-type';
+
+export const environment: Environment = {
+  apiUrl: 'https://api.silkroad-museum.example',
+  showDebugPanel: false,
+};
+```
+
+The staging file:
+
+<!-- example: src/app/26-build-configure-deploy-update/exercise/environments/environment.staging.ts -->
+
+```ts
+import {Environment} from './environment-type';
+
+export const environment: Environment = {
   apiUrl: 'https://staging-api.silkroad-museum.example',
   showDebugPanel: true,
 };
 ```
 
-`typeof production` is the type of the base object, so TypeScript reports an error if a key is missing or has the wrong type. In a real project this file is `src/environments/environment.staging.ts`. Add this configuration next to `development` in the `build` target:
+Add `: Environment` and the import to `environment.development.ts` too. Now TypeScript reports an error if a file misses a key or has a wrong type.
+
+Why a separate file for the type? A shorter idea is `import {environment as production} from './environment';` in the staging file, with the type `typeof production`. The unit test passes, but `ng build -c staging` fails: the file replacement puts `environment.staging.ts` in the place of `environment.ts`, so the staging file now imports itself:
+
+```text
+✘ [ERROR] TS2502: 'environment' is referenced directly or indirectly in its own type annotation. [plugin angular-compiler]
+```
+
+`environment-type.ts` is never replaced, so every file can import it.
+
+Add this configuration next to `development` in the `build` target:
 
 <!-- example: src/app/26-build-configure-deploy-update/exercise/staging-config.json -->
 
@@ -503,16 +556,19 @@ export const environment: typeof production = {
 }
 ```
 
-<!-- example: src/app/26-build-configure-deploy-update/exercise/environment.staging.spec.ts -->
+Then `ng build -c staging` builds with the staging values. The test:
+
+<!-- example: src/app/26-build-configure-deploy-update/exercise/environments/environment.staging.spec.ts -->
 
 ```ts
-import {environment as production} from '../environments/environment';
+import {environment as base} from './environment';
 import {environment as staging} from './environment.staging';
 
 describe('staging environment', () => {
   it('has the same keys as the base file, with staging values', () => {
-    expect(Object.keys(staging).sort()).toEqual(Object.keys(production).sort());
+    expect(Object.keys(staging).sort()).toEqual(Object.keys(base).sort());
     expect(staging.apiUrl).toBe('https://staging-api.silkroad-museum.example');
+    expect(staging.showDebugPanel).toBe(true);
   });
 });
 ```

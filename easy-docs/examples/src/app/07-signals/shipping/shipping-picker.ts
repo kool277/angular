@@ -9,11 +9,11 @@ interface Method {
   selector: 'app-shipping-picker',
   template: `
     @for (option of options(); track option.id) {
-      <button (click)="choose(option)">{{ option.name }}</button>
+      <button type="button" (click)="choose(option)">{{ option.name }}</button>
     }
     <p>Selected: {{ selected().name }}</p>
     <p>Kept selection: {{ kept().name }}</p>
-    <button class="change" (click)="changeCountry()">Change country</button>
+    <button type="button" class="change" (click)="changeCountry()">Change country</button>
   `,
 })
 export class SignalsShippingPicker {

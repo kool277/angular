@@ -85,12 +85,21 @@ Angular has many pipes in `@angular/common`. The most used ones:
 | `async`     | `AsyncPipe`     | Shows the value of a `Promise` or an `Observable` when it arrives |
 | `slice`     | `SlicePipe`     | Takes a part of a list or string, like `Array.slice`              |
 
-All examples below are in one component, `src/app/10-pipes/built-in/built-in-pipes.ts`, with this data:
+All examples below are in one component, [`src/app/10-pipes/built-in/built-in-pipes.ts`](examples/src/app/10-pipes/built-in/built-in-pipes.ts), with this data in its class:
 
-- `city = 'Bukhara'`
-- `opening` = 21 March 2026, 09:30 (UTC)
-- `distance = 1234.5678`, `share = 0.256`, `price = 42`
-- `ticket = { visitor: 'Aziz', adult: true, seat: 12 }`
+<!-- example: src/app/10-pipes/built-in/built-in-pipes.ts#data -->
+
+```ts
+city = 'Bukhara';
+// Date.UTC(year, month, day, hours, minutes). Months start at 0, so 2 is March.
+opening = new Date(Date.UTC(2026, 2, 21, 9, 30)); // 21 March 2026, 09:30 UTC
+distance = 1234.5678;
+share = 0.256;
+price = 42;
+ticket = {visitor: 'Aziz', adult: true, seat: 12};
+```
+
+`Date.UTC(...)` gives a moment in UTC time, so the result is the same in every time zone. JavaScript counts months from `0`: `0` is January, `2` is March, `10` is November.
 
 Text:
 
@@ -164,7 +173,7 @@ You can send the result of one pipe into the next one. Angular runs them from le
 
 `date: 'EEEE'` gives the day name `Saturday`, then `uppercase` makes it `SATURDAY`.
 
-The pipe operator is weaker than most other operators: `{{ firstName + lastName | uppercase }}` joins the names first and then makes the result uppercase. Use parentheses when you are not sure (see part 7).
+Angular runs most other operators first and the pipe last: `{{ firstName + lastName | uppercase }}` joins the names first and then makes the result uppercase. Use parentheses when you are not sure (see part 7).
 
 ### Objects: `json` and `keyvalue`
 
@@ -213,9 +222,9 @@ Until the Promise has a value, `greeting | async` gives `null`, and `?? 'Loading
 
 A custom pipe is a class with the `@Pipe` decorator and a `transform` method:
 
-- `name` in `@Pipe` is the pipe name for templates. Use camelCase, without hyphens.
-- The class name is the same name in PascalCase plus `Pipe`: `initials` → `InitialsPipe`.
-- `implements PipeTransform` asks TypeScript to check that the class has a correct `transform` method.
+- `name` in `@Pipe` is the pipe name for templates. Use **camelCase**, without hyphens. camelCase means: the first word starts with a small letter, every next word with a capital letter, and there are no spaces (`fileSize`, `joinNames`).
+- The class name is the same name in **PascalCase** plus `Pipe`. PascalCase is like camelCase, but the first word starts with a capital letter too: `initials` → `InitialsPipe`, `fileSize` → `FileSizePipe`.
+- `PipeTransform` is an interface from Angular (an interface describes what an object must have, see [chapter 03](03-typescript-you-need.md)). `class InitialsPipe implements PipeTransform` is a promise: "this class has everything the interface asks for". TypeScript then checks that the class has a correct `transform` method, and shows an error if it does not.
 - The first argument of `transform` is the value before the `|`. The other arguments are the parameters.
 
 A good habit is to put the real work in a plain function. The pipe calls it. Other TypeScript code can then use the same function without the pipe.
@@ -280,6 +289,8 @@ An **impure** pipe (`pure: false`) runs every time Angular checks the component,
 <!-- example: src/app/10-pipes/pure-impure/join-pipes.ts#pure -->
 
 ```ts
+import {Pipe, PipeTransform} from '@angular/core';
+
 @Pipe({
   name: 'joinNames',
 })
@@ -304,19 +315,36 @@ export class JoinNamesImpurePipe implements PipeTransform {
 }
 ```
 
-The component `src/app/10-pipes/pure-impure/guest-list.ts` shows the same list with both pipes and has two buttons:
+This component shows the same list with both pipes and has two buttons:
 
-<!-- example: src/app/10-pipes/pure-impure/guest-list.ts#add -->
+<!-- example: src/app/10-pipes/pure-impure/guest-list.ts -->
 
 ```ts
-// Changes the same array: a pure pipe does not notice.
-addByPush() {
-  this.guests.push('Laylo');
-}
+import {Component} from '@angular/core';
+import {JoinNamesImpurePipe, JoinNamesPipe} from './join-pipes';
 
-// Creates a new array: every pipe notices.
-addByCopy() {
-  this.guests = [...this.guests, 'Kamol'];
+@Component({
+  selector: 'app-guest-list',
+  imports: [JoinNamesPipe, JoinNamesImpurePipe],
+  template: `
+    <p id="pure">Pure: {{ guests | joinNames }}</p>
+    <p id="impure">Impure: {{ guests | joinNamesImpure }}</p>
+    <button id="push" (click)="addByPush()">Add Laylo (push)</button>
+    <button id="copy" (click)="addByCopy()">Add Kamol (new array)</button>
+  `,
+})
+export class PipesGuestList {
+  guests = ['Aziz', 'Malika'];
+
+  // Changes the same array: a pure pipe does not notice.
+  addByPush() {
+    this.guests.push('Laylo');
+  }
+
+  // Creates a new array: every pipe notices.
+  addByCopy() {
+    this.guests = [...this.guests, 'Kamol'];
+  }
 }
 ```
 
@@ -375,8 +403,8 @@ export class PipesDownloads {
     {
       id: 1,
       name: 'holiday photos',
-      bytes: 3_450_000,
-      added: new Date(Date.UTC(2026, 10, 2, 14, 5)),
+      bytes: 3_450_000, // the _ only makes the number easier to read: 3450000
+      added: new Date(Date.UTC(2026, 10, 2, 14, 5)), // month 10 is November (months start at 0)
       done: 1,
     },
     {
@@ -436,6 +464,8 @@ Total: 1.2 GB
 
 ### Forgetting to import the pipe
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -447,6 +477,8 @@ export class W1 {
   total = 12;
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] NG8004: No pipe found with name 'currency'.
@@ -477,11 +509,15 @@ export class PipesReceipt {
 
 ### Forgetting parentheses with `? :`
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 <p>{{ isAdmin ? 'Access granted' : 'Access denied' | uppercase }}</p>
 ```
+
+<!-- prettier-ignore-end -->
 
 There is no error. But the pipe belongs only to `'Access denied'`, so when `isAdmin` is true the page shows "Access granted" in normal letters. Fix: put the condition in parentheses, `{{ (isAdmin ? 'Access granted' : 'Access denied') | uppercase }}`. The same rule is used for `??` in the `async` example:
 
@@ -506,11 +542,15 @@ export class PipesAsyncGreeting {
 
 ### Giving a pipe the wrong kind of value
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 <p>{{ age | number }}</p>
 ```
+
+<!-- prettier-ignore-end -->
 
 Here `age` holds the text `'twenty'`. When Angular renders the template, it throws:
 
@@ -518,7 +558,7 @@ Here `age` holds the text `'twenty'`. When Angular renders the template, it thro
 NG02100: InvalidPipeArgument: 'NG02309: twenty is not a number' for pipe 'DecimalPipe'
 ```
 
-Fix: give `number`, `percent` and `currency` real numbers (or text that contains only a number, like `'42'`). Keep data in the right type in your class, as in `src/app/10-pipes/built-in/built-in-pipes.ts`:
+Fix: give `number`, `percent` and `currency` real numbers (or text that contains only a number, like `'42'`). Keep data in the right type in your class, as in [`src/app/10-pipes/built-in/built-in-pipes.ts`](examples/src/app/10-pipes/built-in/built-in-pipes.ts):
 
 <!-- example: src/app/10-pipes/built-in/built-in-pipes.ts#numbers -->
 
@@ -533,6 +573,8 @@ Fix: give `number`, `percent` and `currency` real numbers (or text that contains
 
 ### Changing an array that a pure pipe reads
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -541,7 +583,9 @@ addByPush() {
 }
 ```
 
-There is no error, but a pure pipe keeps showing the old list (the test `guest-list.spec.ts` shows it). Fix: create a new array instead of making the pipe impure:
+<!-- prettier-ignore-end -->
+
+There is no error, but a pure pipe keeps showing the old list (try the first button of the guest list in [part 5](#pure-and-impure-pipes)). Fix: create a new array instead of making the pipe impure:
 
 <!-- example: src/app/10-pipes/pure-impure/guest-list.ts#add -->
 

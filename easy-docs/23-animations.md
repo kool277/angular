@@ -141,6 +141,30 @@ Some details:
 
 With a transition, the class you give to `animate.enter` is the "after" state. The element has no "before" state, because it did not exist. The CSS rule **`@starting-style`** gives it one: the styles an element has in the moment it first appears.
 
+A note that slides in. `slide-in` is the value of `animate.enter`, not a normal class:
+
+<!-- example: src/app/23-animations/fade-note/slide-note.ts -->
+
+```ts
+import {Component, signal} from '@angular/core';
+
+@Component({
+  selector: 'app-slide-note',
+  template: `
+    <button (click)="shown.set(!shown())">Toggle</button>
+    @if (shown()) {
+      <p class="note" animate.enter="slide-in">Tickets are sold out for today.</p>
+    }
+  `,
+  styleUrl: './slide-note.css',
+})
+export class AnimSlideNote {
+  shown = signal(false);
+}
+```
+
+Its CSS file:
+
 <!-- example: src/app/23-animations/fade-note/slide-note.css#slide-in -->
 
 ```css
@@ -158,7 +182,7 @@ With a transition, the class you give to `animate.enter` is the "after" state. T
 }
 ```
 
-When the `<p class="note slide-in">` appears, it starts with `opacity: 0`, and the transition moves it to the normal `opacity: 1`.
+When the `<p>` appears, Angular adds the class `slide-in`. The element starts with `opacity: 0`, and the transition moves it to the normal `opacity: 1`.
 
 ### Animating a change of state with a class
 
@@ -230,12 +254,12 @@ Some people get dizzy or sick from motion. Their operating system has a setting 
 
 ### What a test can prove, and what it cannot
 
-The tests of this guide run in **jsdom**, a fake browser inside Node.js. jsdom builds a DOM but never paints anything and does not run CSS animations. It also has no Web Animations API (`element.getAnimations()`, `element.animate()`). Two more facts:
+The tests of this guide run in **jsdom**, a fake browser inside Node.js. jsdom builds a DOM but never paints anything and does not run CSS animations. It also has no **Web Animations API**: the browser functions that start and control animations from JavaScript, such as `element.animate()` and `element.getAnimations()`. Two more facts:
 
 - `TestBed` turns animations off by default, so tests do not have to wait for them. You can turn them on with `TestBed.configureTestingModule({ animationsEnabled: true })`.
 - Angular uses `animate.enter` and `animate.leave` only in a browser that has `getAnimations()`. In jsdom they do nothing, even with `animationsEnabled: true`: the element appears and disappears at once, and no animation class is added.
 
-So the tests of this chapter prove the **logic**: the element appears and disappears at the right moment, the right class is bound, your own animation function calls `animationComplete()`. They cannot prove that the movement looks right. For that, look at the page in a real browser, or write an end-to-end test that runs in a real browser.
+So the tests of this chapter prove the **logic**: the element appears and disappears at the right moment, the right class is bound, your own animation function calls `animationComplete()`. They cannot prove that the movement looks right. For that, look at the page in a real browser, or write an **end-to-end test**: a test that starts the whole app in a real browser and clicks through it like a user ([chapter 19](19-testing.md#component-harnesses)).
 
 <!-- example: src/app/23-animations/fade-note/fade-note.spec.ts -->
 
@@ -398,7 +422,10 @@ describe('AnimToastList', () => {
     Object.assign(element, {animate});
     const event = {target: element, animationComplete: vi.fn()};
 
+    // The fake event has only the two fields that slideAway() uses. `as unknown as`
+    // tells TypeScript to accept it as a full AnimationCallbackEvent.
     component.slideAway(event as unknown as AnimationCallbackEvent);
+    // Let the `.then()` callback run: it runs after the current code has finished.
     await Promise.resolve();
 
     expect(animate).toHaveBeenCalledTimes(1);
@@ -409,11 +436,31 @@ describe('AnimToastList', () => {
 
 ### Animated page changes (view transitions)
 
-Browsers have a **View Transitions API**: the browser takes a picture of the old page, updates the DOM, and then animates from the old picture to the new page (by default a short cross-fade). The router can use it for every navigation with `withViewTransitions()`:
+Browsers have a **View Transitions API**: the browser takes a picture of the old page, updates the DOM, and then animates from the old picture to the new page (by default a short cross-fade). The router can use it for every navigation with `withViewTransitions()`. The example file has two small pages, their routes, the config, and a shell component with links and a `<router-outlet>`:
 
-<!-- example: src/app/23-animations/view-transitions/view-transitions.config.ts#config -->
+<!-- example: src/app/23-animations/view-transitions/view-transitions.config.ts -->
 
 ```ts
+import {ApplicationConfig, Component} from '@angular/core';
+import {
+  provideRouter,
+  RouterLink,
+  RouterOutlet,
+  Routes,
+  withViewTransitions,
+} from '@angular/router';
+
+@Component({template: '<h2>Home</h2>'})
+export class AnimHomePage {}
+
+@Component({template: '<h2>Tickets</h2>'})
+export class AnimTicketsPage {}
+
+export const transitionRoutes: Routes = [
+  {path: '', component: AnimHomePage},
+  {path: 'tickets', component: AnimTicketsPage},
+];
+
 export const viewTransitionsConfig: ApplicationConfig = {
   providers: [
     provideRouter(
@@ -428,6 +475,19 @@ export const viewTransitionsConfig: ApplicationConfig = {
     ),
   ],
 };
+
+@Component({
+  selector: 'app-transitions-shell',
+  imports: [RouterLink, RouterOutlet],
+  template: `
+    <nav>
+      <a routerLink="/">Home</a>
+      <a routerLink="/tickets">Tickets</a>
+    </nav>
+    <router-outlet />
+  `,
+})
+export class AnimTransitionsShell {}
 ```
 
 > **Developer preview:** `withViewTransitions()` and its type `ViewTransitionInfo` may still change. Browsers without the View Transitions API show the new page at once, without an animation.
@@ -486,7 +546,13 @@ describe('withViewTransitions()', () => {
 
 ### In older code: the `@angular/animations` package
 
-Before Angular 20.2, apps used the package `@angular/animations`. It is **deprecated** now: it still works, but new code should use CSS with `animate.enter` / `animate.leave`, and it will be removed in a future version. You will still meet it in older projects. This is how it looks:
+Before Angular 20.2, apps used the package `@angular/animations`. It is **deprecated** now: it still works, but new code should use CSS with `animate.enter` / `animate.leave`, and it will be removed in a future version. You will still meet it in older projects. New apps do not have the package. To try the examples of this section, install it:
+
+```shell
+npm install @angular/animations@22.2
+```
+
+This is how it looks:
 
 <!-- example: src/app/23-animations/older-code/open-close-legacy.ts#trigger -->
 
@@ -565,11 +631,15 @@ Do not use `@angular/animations` and `animate.enter` / `animate.leave` in the **
 
 ### Using an old trigger without the animations provider
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
 TestBed.createComponent(AnimOpenCloseLegacy); // no animations provider
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ERROR RuntimeError: NG05105: Unexpected synthetic property @openClose found. Please make sure that:
@@ -607,6 +677,8 @@ Better still: for new code, use CSS and `animate.enter` / `animate.leave`, which
 
 ### A transition on enter without a starting style
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```css
@@ -614,6 +686,8 @@ Better still: for new code, use CSS and `animate.enter` / `animate.leave`, which
   transition: opacity 300ms ease-out;
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 There is no error. The element appears at once, with no animation: a transition needs a "before" value, and a new element has none. Add `@starting-style`, or use a keyframe animation:
 
@@ -636,13 +710,17 @@ There is no error. The element appears at once, with no animation: a transition 
 
 ### Forgetting `animationComplete()` in an `(animate.leave)` function
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
 slideAway(event: AnimationCallbackEvent) {
-  event.target.animate([{ opacity: 1 }, { opacity: 0 }], 250);
+  event.target.animate([{opacity: 1}, {opacity: 0}], 250);
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 There is no error. The element fades out, but then stays on the page (invisible, but still taking space) for 4 seconds, until Angular's timeout removes it. Call `event.animationComplete()` when your animation is finished:
 

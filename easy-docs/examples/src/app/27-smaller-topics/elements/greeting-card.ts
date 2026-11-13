@@ -1,7 +1,7 @@
 import {Component, input, output} from '@angular/core';
 
 @Component({
-  selector: 'app-greeting-card',
+  selector: 'app-elements-greeting-card',
   template: `
     <p>Welcome, {{ name() }}!</p>
     <button (click)="greeted.emit(name())">Say hello</button>

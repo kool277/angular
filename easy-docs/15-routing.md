@@ -67,7 +67,7 @@ export const basicRoutes: Routes = [
 ];
 ```
 
-**Step 3. Give the routes to Angular.** `provideRouter()` turns the router on. In a new app, the Angular CLI already wrote this line in `src/app/app.config.ts`, with the routes from `src/app/app.routes.ts`. The example keeps its own copy:
+**Step 3. Give the routes to Angular.** `provideRouter()` turns the router on. In a new app, the Angular CLI already wrote this line in [`src/app/app.config.ts`](examples/src/app/app.config.ts), with the routes from [`src/app/app.routes.ts`](examples/src/app/app.routes.ts). The example keeps its own copy:
 
 <!-- example: src/app/15-routing/basics/basic.config.ts -->
 
@@ -130,7 +130,51 @@ export class RoutingBasicShell {}
 | `<router-outlet />`                           | The router puts the component of the current route here, right after this element.                              |
 | `styles: ...active { font-weight: bold; }`    | Shows the active link in bold.                                                                                  |
 
-To try it in your own app, put the two routes into `app.routes.ts` and the `<nav>` and `<router-outlet />` into `app.html`. The test clicks the About link and checks the page:
+To try it in your own app, put the two routes into `app.routes.ts` and the `<nav>` and `<router-outlet />` into `app.html`. Add `RouterOutlet`, `RouterLink` and `RouterLinkActive` to the `imports` of `App`.
+
+Then run `ng test --watch=false`. The test file `app.spec.ts` that `ng new` created now fails:
+
+```text
+ɵNotFound: NG0201: No provider found for `ActivatedRoute`. Source: DynamicTestModule. Find more at https://v22.angular.dev/errors/NG0201
+```
+
+`routerLink` needs the router, but a test starts without one. `provideRouter(routes)` is in `app.config.ts`, which the test does not use. Fix: open `app.spec.ts` and add `providers: [provideRouter(routes)]` to `TestBed.configureTestingModule`, with two new imports. In your app, `routes` comes from `./app.routes` and the component is `App`; this copy of the file uses the example's names:
+
+<!-- example: src/app/15-routing/basics/own-app.spec.ts#setup -->
+
+```ts
+import {TestBed} from '@angular/core/testing';
+import {provideRouter} from '@angular/router';
+import {basicRoutes} from './basic.routes';
+import {RoutingBasicShell} from './basic-shell';
+
+describe('RoutingBasicShell, tested like a new app', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [RoutingBasicShell],
+      providers: [provideRouter(basicRoutes)],
+    }).compileComponents();
+  });
+```
+
+Now the tests pass again. The example has its own tests. They start the router with the providers from `basicConfig`. `Title` (the service that reads and sets the browser tab's text) comes from `@angular/platform-browser`:
+
+<!-- example: src/app/15-routing/basics/basic-shell.spec.ts#setup -->
+
+```ts
+import {TestBed} from '@angular/core/testing';
+import {Title} from '@angular/platform-browser';
+import {Router} from '@angular/router';
+import {basicConfig} from './basic.config';
+import {RoutingBasicShell} from './basic-shell';
+
+describe('RoutingBasicShell', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({providers: basicConfig.providers});
+  });
+```
+
+This test clicks the About link and checks the page:
 
 <!-- example: src/app/15-routing/basics/basic-shell.spec.ts#click-link -->
 
@@ -209,6 +253,24 @@ export const shopRoutes: Routes = [
 
 `products/:id` matches `/products/honey`, `/products/green-tea` and so on. The router saves the matching part under the name `id`.
 
+The shop's data is a plain list in its own file:
+
+<!-- example: src/app/15-routing/shop/products.ts -->
+
+```ts
+export interface Product {
+  id: string;
+  name: string;
+  price: number;
+}
+
+export const PRODUCTS: Product[] = [
+  {id: 'green-tea', name: 'Green tea', price: 4},
+  {id: 'black-tea', name: 'Black tea', price: 3},
+  {id: 'honey', name: 'Honey', price: 7},
+];
+```
+
 The easiest way to read it is an **input** with the same name. Turn this on once with `withComponentInputBinding()`:
 
 <!-- example: src/app/15-routing/shop/shop.config.ts -->
@@ -279,23 +341,47 @@ A **query parameter** is the part after `?`, such as `?sort=price`. It is option
 </p>
 ```
 
-With `withComponentInputBinding()`, query parameters also become inputs. When the parameter is missing, the input is `undefined`, so the type includes `undefined`:
+With `withComponentInputBinding()`, query parameters also become inputs. When the parameter is missing, the input is `undefined`, so the type includes `undefined`. The whole product list:
 
-<!-- example: src/app/15-routing/shop/product-list.ts#sort-input -->
+<!-- example: src/app/15-routing/shop/product-list.ts -->
 
 ```ts
-/** Filled from the query parameter `?sort=...`. */
-readonly sort = input<string>();
+import {Component, computed, input} from '@angular/core';
+import {RouterLink} from '@angular/router';
+import {PRODUCTS} from './products';
 
-readonly sorted = computed(() => {
-  const list = [...PRODUCTS];
-  if (this.sort() === 'price') {
-    list.sort((a, b) => a.price - b.price);
-  } else if (this.sort() === 'name') {
-    list.sort((a, b) => a.name.localeCompare(b.name));
-  }
-  return list;
-});
+@Component({
+  imports: [RouterLink],
+  template: `
+    <h2>Products</h2>
+    <p>
+      Sort:
+      <a routerLink="/products" [queryParams]="{sort: 'name'}">by name</a>
+      <a routerLink="/products" [queryParams]="{sort: 'price'}">by price</a>
+    </p>
+    <ul>
+      @for (product of sorted(); track product.id) {
+        <li>
+          <a [routerLink]="['/products', product.id]">{{ product.name }}</a>
+        </li>
+      }
+    </ul>
+  `,
+})
+export class RoutingProductList {
+  /** Filled from the query parameter `?sort=...`. */
+  readonly sort = input<string>();
+
+  readonly sorted = computed(() => {
+    const list = [...PRODUCTS];
+    if (this.sort() === 'price') {
+      list.sort((a, b) => a.price - b.price);
+    } else if (this.sort() === 'name') {
+      list.sort((a, b) => a.name.localeCompare(b.name));
+    }
+    return list;
+  });
+}
 ```
 
 The router fills inputs from these places. When two of them use the same name, the first one in this list wins:
@@ -377,7 +463,9 @@ A redirect also keeps old links working after you rename a page:
 {path: 'blog', component: RoutingBlog},
 ```
 
-`redirectTo` can be a function that decides the target. It receives part of the route information, such as `params` and `queryParams`, and may call `inject()`:
+`redirectTo` can be a function that decides the target. It receives one object with part of the route information, such as `params` and `queryParams`, and may call `inject()`.
+
+The function below is written `({queryParams}) => ...`. This is **destructuring**: the braces take the property `queryParams` out of the object and put it into a variable with the same name. It is a short form of `(info) => info.queryParams['meal'] ...`. You will see this form often.
 
 <!-- example: src/app/15-routing/redirects/redirect.routes.ts#function -->
 
@@ -397,6 +485,33 @@ The **wildcard route** `**` matches every URL. Put it **last**, as the "page not
 
 ```ts
 {path: '**', component: RoutingNotFound},
+```
+
+The pages of these routes are small components. `RoutingMenu` shows the `:meal` parameter through an input:
+
+<!-- example: src/app/15-routing/redirects/pages.ts -->
+
+```ts
+import {Component, input} from '@angular/core';
+
+@Component({template: `<h2>Home</h2>`})
+export class RoutingRedirectHome {}
+
+@Component({template: `<h2>Blog</h2>`})
+export class RoutingBlog {}
+
+@Component({template: `<h2>Menu: {{ meal() }}</h2>`})
+export class RoutingMenu {
+  readonly meal = input.required<string>();
+}
+
+@Component({
+  template: `
+    <h2>Page not found</h2>
+    <p>Check the address and try again.</p>
+  `,
+})
+export class RoutingNotFound {}
 ```
 
 ### Router events and a loading message
@@ -426,7 +541,7 @@ For a "Loading…" message you need no events at all. `router.currentNavigation(
 readonly isNavigating = computed(() => this.router.currentNavigation() !== null);
 ```
 
-To react to single events, read `router.events`. It is an Observable. `subscribe` calls your function for every event. `takeUntilDestroyed()` stops listening when the component is destroyed ([chapter 18](18-rxjs-interop.md) explains both):
+To react to single events, read `router.events`. It is an Observable. `subscribe` calls your function for every event. `takeUntilDestroyed()` stops listening when the component is destroyed. `.pipe(...)` here is a method of the Observable, not a template pipe like in [chapter 10](10-pipes.md): it adds steps between the Observable and your function ([chapter 18](18-rxjs-interop.md) explains all three):
 
 <!-- example: src/app/15-routing/events/event-shell.ts#events -->
 
@@ -466,6 +581,9 @@ it('passes the :id route parameter into the id input', async () => {
 - `RouterTestingHarness.create()` creates the outlet. It uses the routes from `provideRouter` in `TestBed`.
 - `navigateByUrl(url, Component)` navigates and returns the component instance. It fails if a different component opens.
 - `routeNativeElement` is the HTML element of the routed component.
+- `harness.fixture` is the `ComponentFixture` of the outlet. After a click, wait with `await harness.fixture.whenStable()`, as with any fixture.
+
+Most page components in this part are tiny: a heading and nothing else, for example `@Component({template: '<h2>Admin start page</h2>'}) export class RoutingAdminHome {}`. When a section does not show a page component, write it like that.
 
 [Chapter 19](19-testing.md) explains testing in depth.
 
@@ -521,7 +639,7 @@ A **guard** is a function that the router calls before it opens (or leaves) a pa
 - a `UrlTree` (an object that describes a URL, made with `router.createUrlTree([...])` or `router.parseUrl('...')`) or a `RedirectCommand`: go to that URL instead;
 - or a Promise or Observable of one of these, when the answer takes time.
 
-Our fake login service holds two signals:
+Our fake login service holds two signals. (`@Injectable({providedIn: 'root'})` is the longer form of `@Service()`, see [chapter 14](14-services-and-dependency-injection.md).)
 
 <!-- example: src/app/15-routing/guards/auth.ts -->
 
@@ -568,11 +686,38 @@ export const unsavedChangesGuard: CanDeactivateFn<HasUnsavedChanges> = (componen
 };
 ```
 
-`CanDeactivateFn` decides if the user may **leave** a page. It gets the component of that page. Here it asks with the browser's `confirm()` window only when there are unsaved changes:
+`CanDeactivateFn` decides if the user may **leave** a page. It gets the component of that page. Here it asks with the browser's `confirm()` window only when there are unsaved changes. The pages of this section, with the login page that reads `?returnUrl` as an input and the notes page that has `hasUnsavedChanges()`:
 
-<!-- example: src/app/15-routing/guards/pages.ts#notes -->
+<!-- example: src/app/15-routing/guards/pages.ts -->
 
 ```ts
+import {Component, inject, input, signal} from '@angular/core';
+import {Router} from '@angular/router';
+import {RoutingAuth} from './auth';
+import {HasUnsavedChanges} from './guards';
+
+@Component({
+  template: `
+    <h2>Please log in</h2>
+    <button (click)="logIn()">Log in</button>
+  `,
+})
+export class RoutingLoginPage {
+  private readonly auth = inject(RoutingAuth);
+  private readonly router = inject(Router);
+
+  /** The page to go back to, from `?returnUrl=...`. */
+  readonly returnUrl = input('/');
+
+  logIn() {
+    this.auth.loggedIn.set(true);
+    this.router.navigateByUrl(this.returnUrl());
+  }
+}
+
+@Component({template: `<h2>Your account</h2>`})
+export class RoutingAccountPage {}
+
 @Component({
   template: `
     <h2>Notes</h2>
@@ -586,6 +731,12 @@ export class RoutingNotesPage implements HasUnsavedChanges {
     return this.draft() !== '';
   }
 }
+
+@Component({template: `<h2>Admin dashboard</h2>`})
+export class RoutingAdminDashboard {}
+
+@Component({template: `<h2>User dashboard</h2>`})
+export class RoutingUserDashboard {}
 ```
 
 <!-- example: src/app/15-routing/guards/guards.ts#can-match -->
@@ -606,6 +757,33 @@ export const adminGuard: CanMatchFn = () => inject(RoutingAuth).isAdmin();
 ```
 
 A route lists its guards in arrays: `canActivate`, `canDeactivate`, `canMatch`, and `canActivateChild` (runs before any child route of this route opens). The router starts all guards of an array together; the navigation goes on only when all of them say `true`.
+
+The test creates the harness once for every test, in `beforeEach`:
+
+<!-- example: src/app/15-routing/guards/guards.spec.ts#setup -->
+
+```ts
+import {TestBed} from '@angular/core/testing';
+import {provideRouter, Router, withComponentInputBinding} from '@angular/router';
+import {RouterTestingHarness} from '@angular/router/testing';
+import {RoutingAuth} from './auth';
+import {guardRoutes} from './guard.routes';
+import {RoutingAccountPage, RoutingLoginPage, RoutingNotesPage} from './pages';
+
+describe('route guards', () => {
+  let harness: RouterTestingHarness;
+  let router: Router;
+  let auth: RoutingAuth;
+
+  beforeEach(async () => {
+    TestBed.configureTestingModule({
+      providers: [provideRouter(guardRoutes, withComponentInputBinding())],
+    });
+    harness = await RouterTestingHarness.create();
+    router = TestBed.inject(Router);
+    auth = TestBed.inject(RoutingAuth);
+  });
+```
 
 <!-- example: src/app/15-routing/guards/guards.spec.ts#guard-test -->
 
@@ -825,6 +1003,8 @@ You do not need these on day one, but you should know that they exist:
 
 ### Forgetting to import `RouterOutlet`
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -834,6 +1014,8 @@ You do not need these on day one, but you should know that they exist:
 })
 export class TmpOutlet {}
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] NG8001: 'router-outlet' is not a known element:
@@ -845,6 +1027,8 @@ Fix: add `RouterOutlet` to `imports`, as in the shell from part 4.
 
 ### Forgetting to import `RouterLink`
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -854,6 +1038,8 @@ Fix: add `RouterOutlet` to `imports`, as in the shell from part 4.
 })
 export class TmpLink {}
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] NG8002: Can't bind to 'routerLink' since it isn't a known property of 'a'. Find more at https://next.angular.dev/errors/NG8002 [plugin angular-compiler]
@@ -875,13 +1061,58 @@ With the plain attribute `routerLink="/about"` it is worse: there is **no** erro
 <a routerLink="/about" routerLinkActive="active" ariaCurrentWhenActive="page">About</a>
 ```
 
-### A redirect on `''` without `pathMatch: 'full'`
+### Testing router links without the router
+
+<!-- prettier-ignore-start -->
 
 <!-- wrong -->
 
 ```ts
-{ path: '', redirectTo: 'home' },
+beforeEach(async () => {
+  await TestBed.configureTestingModule({
+    imports: [RoutingBasicShell],
+  }).compileComponents();
+});
 ```
+
+<!-- prettier-ignore-end -->
+
+The build works, but every test of this component fails:
+
+```text
+ɵNotFound: NG0201: No provider found for `ActivatedRoute`. Source: DynamicTestModule. Find more at https://v22.angular.dev/errors/NG0201
+```
+
+`RouterLink` asks for `ActivatedRoute`, and only the router provides it. The app gets the router from `app.config.ts`, but a test does not read that file. Fix: add `provideRouter(...)` to the test's `providers`, as shown in [part 4](#4-smallest-example):
+
+<!-- example: src/app/15-routing/basics/own-app.spec.ts#setup -->
+
+```ts
+import {TestBed} from '@angular/core/testing';
+import {provideRouter} from '@angular/router';
+import {basicRoutes} from './basic.routes';
+import {RoutingBasicShell} from './basic-shell';
+
+describe('RoutingBasicShell, tested like a new app', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [RoutingBasicShell],
+      providers: [provideRouter(basicRoutes)],
+    }).compileComponents();
+  });
+```
+
+### A redirect on `''` without `pathMatch: 'full'`
+
+<!-- prettier-ignore-start -->
+
+<!-- wrong -->
+
+```ts
+{path: '', redirectTo: 'home'},
+```
+
+<!-- prettier-ignore-end -->
 
 Angular throws this error when the router starts:
 
@@ -899,11 +1130,15 @@ Fix:
 
 ### Starting a path with `/`
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
-{ path: '/about', component: RoutingAbout },
+{path: '/about', component: RoutingAbout},
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 NG04014: Invalid configuration of route '/about': path cannot start with a slash
@@ -913,11 +1148,15 @@ Fix: write paths without the leading slash, `path: 'about'`. Only links (`router
 
 ### Forgetting `withComponentInputBinding()`
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
 provideRouter(shopRoutes),
 ```
+
+<!-- prettier-ignore-end -->
 
 The router does not write the `:id` parameter into the `id` input. A required input that is read without a value throws:
 
@@ -941,6 +1180,8 @@ export const shopConfig: ApplicationConfig = {
 
 ### Calling `inject()` after `await`
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -950,6 +1191,8 @@ export const productResolver: ResolveFn<Product> = async (route) => {
   // ...
 };
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 NG0203: The `_RoutingProductStore` token injection failed. `inject()` function must be called from an injection context such as a constructor, a factory function, a field initializer, or a function used with `runInInjectionContext`. Find more at https://v22.angular.dev/errors/NG0203
@@ -970,6 +1213,8 @@ export const productResolver: ResolveFn<Product> = async (route) => {
 
 ### The wildcard route first
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -978,6 +1223,8 @@ export const routes: Routes = [
   {path: 'about', component: RoutingAbout},
 ];
 ```
+
+<!-- prettier-ignore-end -->
 
 There is no error. But the router takes the first match, and `**` matches everything, so every URL shows "Page not found". Fix: put `**` last, as in the redirect routes in part 5.
 

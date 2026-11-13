@@ -1,7 +1,7 @@
 import {Component, input} from '@angular/core';
 
 @Component({
-  selector: 'app-ticket-summary',
+  selector: 'app-i18n-ticket-summary',
   template: `
     <!-- #docregion plural -->
     <p class="count" i18n>

@@ -26,7 +26,7 @@ export class ControlFlowFlakyWidget {
       <app-flaky-widget />
     } @error {
       <p>Problem: {{ $error.message }}</p>
-      <button (click)="$reset()">Try again</button>
+      <button type="button" (click)="$reset()">Try again</button>
     }
     <p>The rest of the page still works.</p>
   `,

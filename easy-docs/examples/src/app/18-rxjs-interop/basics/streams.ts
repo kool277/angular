@@ -1,6 +1,6 @@
+// #docregion countdown
 import {Observable, Subject, filter, from, map} from 'rxjs';
 
-// #docregion countdown
 /** An Observable made by hand: it counts down once per second, then completes. */
 export function countdown(start: number): Observable<number> {
   return new Observable<number>((subscriber) => {

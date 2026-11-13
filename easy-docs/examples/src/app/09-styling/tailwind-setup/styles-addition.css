@@ -1,0 +1,4 @@
+/* The line to add at the end of src/styles.css. This guide's examples do not use Tailwind. */
+/* #docregion import */
+@import 'tailwindcss';
+/* #enddocregion import */

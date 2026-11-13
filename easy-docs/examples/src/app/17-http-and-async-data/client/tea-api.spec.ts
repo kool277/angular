@@ -1,3 +1,4 @@
+// #docregion setup
 import {provideHttpClientTesting, HttpTestingController} from '@angular/common/http/testing';
 import {TestBed} from '@angular/core/testing';
 import {firstValueFrom} from 'rxjs';
@@ -14,6 +15,7 @@ describe('HttpTeaApi', () => {
   });
 
   afterEach(() => httpTesting.verify());
+  // #enddocregion setup
 
   // #docregion get
   it('loads the teas with a GET request', async () => {

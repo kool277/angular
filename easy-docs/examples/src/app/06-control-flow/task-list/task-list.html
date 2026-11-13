@@ -4,7 +4,7 @@
 <!-- #enddocregion let -->
 
 <input #title placeholder="New task" />
-<button class="add" (click)="add(title.value); title.value = ''">Add</button>
+<button type="button" class="add" (click)="add(title.value); title.value = ''">Add</button>
 
 <ul>
   @for (task of tasks; track task.id) {
@@ -22,9 +22,9 @@
         }
       }
       @if (task.status === 'done') {
-        <button (click)="remove(task)">Remove</button>
+        <button type="button" (click)="remove(task)">Remove</button>
       } @else {
-        <button (click)="nextStep(task)">Next step</button>
+        <button type="button" (click)="nextStep(task)">Next step</button>
       }
     </li>
   } @empty {

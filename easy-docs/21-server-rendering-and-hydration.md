@@ -29,6 +29,14 @@ With server rendering, the HTML arrives already filled in. The user sees the con
 
 What does "render on the server" mean? Angular turns a component into a string of HTML, without a browser. The function `renderApplication` from `@angular/platform-server` does exactly that. A real SSR app calls it for you on the server (see part 5), but you can call it yourself, for example in a test.
 
+A new app does not have this package. Install it first, in the same version as your other Angular packages:
+
+```shell
+npm install @angular/platform-server@22.2
+```
+
+(`ng add @angular/ssr`, shown in part 5, also installs it, but it turns your app into an SSR app. For the examples of this chapter the package alone is enough.)
+
 A normal component:
 
 <!-- example: src/app/21-server-rendering-and-hydration/render-to-string/welcome.ts -->
@@ -129,7 +137,7 @@ ng add @angular/ssr
 
 Both add the `@angular/ssr` package and these files (the examples workspace of this guide is a CSR app, so it does not have them):
 
-- `src/server.ts`: a small Node.js web server (it uses the Express library). For each request it calls Angular's server engine, which renders the page, as `renderApplication` did in part 4.
+- `src/server.ts`: a small Node.js web server (it uses **Express**, a popular library for web servers in Node.js). For each request it calls Angular's server engine, which renders the page, as `renderApplication` did in part 4.
 - `src/main.server.ts`: starts the app on the server.
 - `src/app/app.config.server.ts`: the `ApplicationConfig` for the server. It contains `provideServerRendering(withRoutes(serverRoutes))` from `@angular/ssr` and is merged with your normal `app.config.ts` by `mergeApplicationConfig`.
 - `src/app/app.routes.server.ts`: the **server routes**. Each entry gives a path and a `renderMode`: `RenderMode.Client` (CSR), `RenderMode.Server` (SSR) or `RenderMode.Prerender` (SSG). A prerendered route with a parameter, such as `post/:id`, lists the values to build with `getPrerenderParams`.
@@ -273,6 +281,46 @@ A block **without** a `hydrate` trigger renders only its placeholder on the serv
 ```
 <!-- prettier-ignore-end -->
 
+The whole file, with the two small components that the blocks load:
+
+<!-- example: src/app/21-server-rendering-and-hydration/incremental/news-page.ts -->
+
+```ts
+import {Component} from '@angular/core';
+
+@Component({
+  selector: 'app-ssr-comments',
+  template: `<p>12 comments</p>`,
+})
+export class SsrComments {}
+
+@Component({
+  selector: 'app-ssr-related',
+  template: `<p>Related articles</p>`,
+})
+export class SsrRelated {}
+
+@Component({
+  selector: 'app-ssr-news-page',
+  imports: [SsrComments, SsrRelated],
+  template: `
+    <h1>City opens a new park</h1>
+    @defer (on viewport; hydrate on viewport) {
+      <app-ssr-comments />
+    } @placeholder {
+      <p>Comments</p>
+    }
+
+    @defer (on viewport) {
+      <app-ssr-related />
+    } @placeholder {
+      <p>More articles</p>
+    }
+  `,
+})
+export class SsrNewsPage {}
+```
+
 The test proves both:
 
 <!-- example: src/app/21-server-rendering-and-hydration/incremental/news-page.spec.ts -->
@@ -403,6 +451,11 @@ describe('SsrVisitStorage', () => {
 });
 ```
 
+Notes on the test:
+
+- `vi.spyOn(Storage.prototype, 'getItem')` watches `getItem` of **every** storage object. `Storage.prototype` is the place where the browser keeps the methods that `localStorage` and `sessionStorage` share. Spying there also catches calls made through `localStorage.getItem(...)`.
+- `getItem.mockRestore()` removes the spy and puts the real method back, so the next test is not affected.
+
 The adev page also shows a third way: provide one service class for the browser in `app.config.ts` and another for the server in `app.config.server.ts`.
 
 ### Waiting for data, and transfer state
@@ -510,11 +563,13 @@ describe('SsrRecipePage on the server', () => {
 });
 ```
 
-The first test proves the important part: the server waited for the HTTP answer, so the HTML contains "Plov" and not "Loading…". A crawler and a user on a slow phone both see the recipe at once. In a real SSR app, the answer is also stored in the page by the HTTP transfer cache, so the browser does not request it again during hydration. (The test environment of this guide runs Angular's browser build, which leaves out that server-only step, so the test cannot show it.)
+The first test proves the important part: the server waited for the HTTP answer, so the HTML contains "Plov" and not "Loading…". A crawler and a user on a slow phone both see the recipe at once. In a real SSR app, the answer is also stored in the page by the HTTP transfer cache, so the browser does not request it again during hydration. (A unit test runs the browser version of Angular. There the transfer cache stores nothing; only a real SSR server does it. So the test cannot show this part.)
 
 ## 7. Common mistakes
 
 ### Using a browser API directly in a component
+
+<!-- prettier-ignore-start -->
 
 <!-- wrong -->
 
@@ -531,6 +586,8 @@ export class SsrLastVisitWrong {
   }
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 In the browser this works. On the server, the page fails to render, and the server log shows:
 
@@ -568,15 +625,19 @@ export class SsrLastVisit {
 
 ### Showing different content on the server and in the browser
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 @if (isBrowser) {
-<p>Your window is {{ width }} pixels wide.</p>
+  <p>Your window is {{ width }} pixels wide.</p>
 } @else {
-<p>Measuring the window…</p>
+  <p>Measuring the window…</p>
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 No error during the build. But the first render in the browser differs from the server's HTML. Hydration cannot match them, and the page flickers or jumps (bad CLS). Fix: render the same thing first on both sides, and change it in `afterNextRender`. The exercise below shows this.
 

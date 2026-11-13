@@ -1,9 +1,10 @@
+// #docregion inspector
 import {Component, Directive, InjectionToken, inject} from '@angular/core';
 import {THEME} from '../hierarchy/theme';
 
+// No provider anywhere gives a value for this token.
 export const BETA_FEATURES = new InjectionToken<boolean>('BETA_FEATURES');
 
-// #docregion inspector
 @Component({
   selector: 'app-di-theme-inspector',
   providers: [{provide: THEME, useValue: 'contrast'}],
@@ -44,6 +45,7 @@ export class DiPlainCard {}
 export class DiThemedCard {}
 // #enddocregion host
 
+// #docregion demo
 @Component({
   selector: 'app-di-modifiers-demo',
   imports: [DiThemeInspector, DiPlainCard, DiThemedCard],
@@ -55,3 +57,4 @@ export class DiThemedCard {}
   `,
 })
 export class DiModifiersDemo {}
+// #enddocregion demo

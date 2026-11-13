@@ -4,8 +4,8 @@ import {Component, signal} from '@angular/core';
   selector: 'app-signals-counter',
   template: `
     <p>Count: {{ count() }}</p>
-    <button (click)="increment()">+1</button>
-    <button (click)="reset()">Reset</button>
+    <button type="button" (click)="increment()">+1</button>
+    <button type="button" (click)="reset()">Reset</button>
   `,
 })
 export class SignalsCounter {

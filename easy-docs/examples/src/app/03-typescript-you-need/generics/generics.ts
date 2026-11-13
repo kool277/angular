@@ -1,5 +1,3 @@
-import {signal} from '@angular/core';
-
 // #docregion arrays
 export const names: Array<string> = ['Amina', 'Bekzod'];
 export const prices: number[] = [3, 1.5];
@@ -12,6 +10,8 @@ export function firstItem<T>(items: T[]): T | undefined {
 // #enddocregion function
 
 // #docregion signal
+import {signal} from '@angular/core';
+
 export const count = signal<number>(0);
 export const selectedName = signal<string | null>(null);
 // #enddocregion signal

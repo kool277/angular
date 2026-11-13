@@ -6,7 +6,7 @@ You should know:
 
 - property binding, event binding and `[disabled]` ([Templates and binding](05-templates-and-binding.md));
 - `@if` and `@for` with `track` and `$index` ([Control flow](06-control-flow.md));
-- `signal`, `computed`, `update` and what a resource is ([Signals](07-signals.md));
+- `signal`, `computed`, `update` and what a resource is ([Signals](07-signals.md)); this chapter writes one `resource()` and explains the little it needs, [chapter 17](17-http-and-async-data.md) explains resources in depth;
 - `input()`, `output()` and `model()` ([Inputs, outputs and model](08-inputs-outputs-model.md));
 - what a directive is ([Directives](11-directives.md));
 - services and `inject()` ([Services and dependency injection](14-services-and-dependency-injection.md)).
@@ -274,36 +274,74 @@ Rules are reactive, like `computed`: Angular runs them again when a value they r
 
 ### A registration form with error messages
 
-A registration form with five fields. Its schema:
+A registration form with five fields. The whole component (the `<app-forms-field-errors>` component comes below):
 
-<!-- example: src/app/16-forms/validation/registration.ts#schema -->
+<!-- example: src/app/16-forms/validation/registration.ts -->
 
 ```ts
-readonly regForm = form(this.regModel, (path) => {
-  required(path.username, {message: 'Choose a username.'});
-  minLength(path.username, 3, {message: 'Use at least 3 characters.'});
-  validate(path.username, ({value}) => {
-    if (value().includes(' ')) {
-      return {kind: 'noSpaces', message: 'Spaces are not allowed.'};
-    }
-    return undefined;
+import {Component, signal} from '@angular/core';
+import {
+  email,
+  form,
+  FormField,
+  min,
+  minLength,
+  pattern,
+  required,
+  validate,
+} from '@angular/forms/signals';
+import {FormsFieldErrors} from './field-errors';
+
+@Component({
+  selector: 'app-forms-registration',
+  imports: [FormField, FormsFieldErrors],
+  template: `
+    <label>Username <input [formField]="regForm.username" /></label>
+    <app-forms-field-errors [state]="regForm.username()" />
+
+    <label>Email <input type="email" [formField]="regForm.email" /></label>
+    <app-forms-field-errors [state]="regForm.email()" />
+
+    <label>Age <input type="number" [formField]="regForm.age" /></label>
+    <app-forms-field-errors [state]="regForm.age()" />
+
+    <label><input type="checkbox" [formField]="regForm.callMe" /> Call me</label>
+    <label>Phone <input type="tel" [formField]="regForm.phone" /></label>
+    <app-forms-field-errors [state]="regForm.phone()" />
+
+    <button [disabled]="regForm().invalid()">Register</button>
+  `,
+})
+export class FormsRegistration {
+  readonly regModel = signal({username: '', email: '', age: 18, callMe: false, phone: ''});
+
+  readonly regForm = form(this.regModel, (path) => {
+    required(path.username, {message: 'Choose a username.'});
+    minLength(path.username, 3, {message: 'Use at least 3 characters.'});
+    validate(path.username, ({value}) => {
+      if (value().includes(' ')) {
+        return {kind: 'noSpaces', message: 'Spaces are not allowed.'};
+      }
+      return undefined;
+    });
+
+    required(path.email, {message: 'Enter your email address.'});
+    email(path.email, {message: 'This is not an email address.'});
+
+    min(path.age, 16, {message: 'You must be 16 or older.'});
+
+    required(path.phone, {
+      message: 'Enter a phone number, so that we can call you.',
+      when: ({valueOf}) => valueOf(path.callMe),
+    });
+    pattern(path.phone, /^\+?[0-9 ]*$/, {message: 'Use only digits, spaces and "+".'});
   });
-
-  required(path.email, {message: 'Enter your email address.'});
-  email(path.email, {message: 'This is not an email address.'});
-
-  min(path.age, 16, {message: 'You must be 16 or older.'});
-
-  required(path.phone, {
-    message: 'Enter a phone number, so that we can call you.',
-    when: ({valueOf}) => valueOf(path.callMe),
-  });
-  pattern(path.phone, /^\+?[0-9 ]*$/, {message: 'Use only digits, spaces and "+".'});
-});
+}
 ```
 
 - A field can have many rules. `username` has three: two built-in rules and a custom `validate` rule.
 - In `when` and `validate`, the `ctx` object has `value()` (this field) and `valueOf(path)` (the value of **another** field). The phone is only required while the "Call me" checkbox is checked.
+- The code writes `({value}) =>` instead of `(ctx) => ...ctx.value()`. This is destructuring ([chapter 15](15-routing.md#redirects-and-the-wildcard-route)): it takes `value` out of the `ctx` object. `({valueOf}) =>` takes `valueOf` out of it.
 - `path.phone` is not a signal. Inside the schema, always read values through `ctx`.
 
 Users should not see red errors on an empty page. The usual pattern: show the errors of a field only after it is **touched**. This small component does that for any field:
@@ -335,7 +373,7 @@ export class FormsFieldErrors {
 }
 ```
 
-`ReadonlyFieldState<unknown>` is the type of any field state. The form passes the state of each field:
+`ReadonlyFieldState<unknown>` is the type of any field state. The form passes the state of each field, as in the template above:
 
 <!-- example: src/app/16-forms/validation/registration.ts#template -->
 
@@ -354,21 +392,39 @@ More validation tools, for later:
 
 ### Cross-field validation: two passwords
 
-A rule on one field can read other fields with `valueOf`:
+A rule on one field can read other fields with `valueOf`. `({value, valueOf})` takes both functions out of `ctx`:
 
-<!-- example: src/app/16-forms/cross-field/password.ts#schema -->
+<!-- example: src/app/16-forms/cross-field/password.ts -->
 
 ```ts
-readonly passwordForm = form(this.passwordModel, (path) => {
-  required(path.password);
-  minLength(path.password, 8);
-  validate(path.confirm, ({value, valueOf}) => {
-    if (value() !== valueOf(path.password)) {
-      return {kind: 'mismatch', message: 'The two passwords are different.'};
+import {Component, signal} from '@angular/core';
+import {form, FormField, minLength, required, validate} from '@angular/forms/signals';
+
+@Component({
+  selector: 'app-forms-password',
+  imports: [FormField],
+  template: `
+    <label>Password <input type="password" [formField]="passwordForm.password" /></label>
+    <label>Repeat it <input type="password" [formField]="passwordForm.confirm" /></label>
+    @if (passwordForm.confirm().getError('mismatch'); as error) {
+      <p class="error">{{ error.message }}</p>
     }
-    return undefined;
+  `,
+})
+export class FormsPassword {
+  readonly passwordModel = signal({password: '', confirm: ''});
+
+  readonly passwordForm = form(this.passwordModel, (path) => {
+    required(path.password);
+    minLength(path.password, 8);
+    validate(path.confirm, ({value, valueOf}) => {
+      if (value() !== valueOf(path.password)) {
+        return {kind: 'mismatch', message: 'The two passwords are different.'};
+      }
+      return undefined;
+    });
   });
-});
+}
 ```
 
 The rule sits on `confirm`, so the error appears next to the second input, where the user would fix it. Because the rule reads `valueOf(path.password)`, it runs again when **either** field changes. The template reads the error by its kind: `passwordForm.confirm().getError('mismatch')`.
@@ -380,6 +436,9 @@ Some checks need a server: "is this username still free?". The answer arrives la
 <!-- example: src/app/16-forms/async/username.ts#fake-server -->
 
 ```ts
+import {Component, resource, signal} from '@angular/core';
+import {debounce, form, FormField, required, validateAsync} from '@angular/forms/signals';
+
 const TAKEN_NAMES = ['admin', 'aziza'];
 
 /** Pretends to ask a server. The answer arrives after 50 ms. */
@@ -390,26 +449,48 @@ export function isUsernameTaken(name: string): Promise<boolean> {
 }
 ```
 
-`validateAsync` connects a field with a **resource** ([chapter 07](07-signals.md)):
+`validateAsync` connects a field with a **resource** ([chapter 07](07-signals.md)). Here you write the resource yourself, with `resource({params, loader})` from `@angular/core`:
 
-<!-- example: src/app/16-forms/async/username.ts#schema -->
+- `params` is a signal with the value to load for (here: the username to check).
+- `loader` is an async function. The resource calls it with the current `params`, and again every time `params` changes. What it returns (here: the Promise from `isUsernameTaken`) becomes the resource's value.
+- `({params}) =>` is destructuring again: the loader gets an object and takes `params` out of it.
+
+[Chapter 17](17-http-and-async-data.md#resource-any-async-work-as-signals) explains resources in depth. The component:
+
+<!-- example: src/app/16-forms/async/username.ts#component -->
 
 ```ts
-readonly nameForm = form(this.nameModel, (path) => {
-  required(path.username);
-  debounce(path.username, 200);
-  validateAsync(path.username, {
-    params: ({value}) => (value().length >= 3 ? value() : undefined),
-    factory: (username) =>
-      resource({
-        params: username,
-        loader: ({params}) => isUsernameTaken(params),
-      }),
-    onSuccess: (taken) =>
-      taken ? {kind: 'taken', message: 'This name is already taken.'} : undefined,
-    onError: () => ({kind: 'checkFailed', message: 'Could not check the name.'}),
+@Component({
+  selector: 'app-forms-username',
+  imports: [FormField],
+  template: `
+    <label>Username <input [formField]="nameForm.username" /></label>
+    @if (nameForm.username().pending()) {
+      <p class="pending">Checking…</p>
+    } @else if (nameForm.username().getError('taken'); as error) {
+      <p class="error">{{ error.message }}</p>
+    }
+  `,
+})
+export class FormsUsername {
+  readonly nameModel = signal({username: ''});
+
+  readonly nameForm = form(this.nameModel, (path) => {
+    required(path.username);
+    debounce(path.username, 200);
+    validateAsync(path.username, {
+      params: ({value}) => (value().length >= 3 ? value() : undefined),
+      factory: (username) =>
+        resource({
+          params: username,
+          loader: ({params}) => isUsernameTaken(params),
+        }),
+      onSuccess: (taken) =>
+        taken ? {kind: 'taken', message: 'This name is already taken.'} : undefined,
+      onError: () => ({kind: 'checkFailed', message: 'Could not check the name.'}),
+    });
   });
-});
+}
 ```
 
 | Part                                   | What it does                                                                                                                                                                    |
@@ -420,7 +501,7 @@ readonly nameForm = form(this.nameModel, (path) => {
 | `onSuccess: (taken) => ...`            | Turns the answer into an error, or `undefined` when all is fine.                                                                                                                |
 | `onError: () => ...`                   | Required. The error to show when the check itself fails (for example, no network).                                                                                              |
 
-While the check runs, `pending()` is `true`, and the field is neither valid nor invalid. The template shows "Checking…":
+While the check runs, `pending()` is `true`, and the field is neither valid nor invalid. The template shows "Checking…" with `@if (nameForm.username().pending())`:
 
 ```mermaid
 sequenceDiagram
@@ -439,21 +520,54 @@ For checks over HTTP, `validateHttp` is shorter: you give it a URL instead of a 
 
 ### Hidden, disabled and read-only fields
 
-Logic rules change how a field behaves:
+Logic rules change how a field behaves. They come from `@angular/forms/signals`, like the validators:
 
-<!-- example: src/app/16-forms/logic/order.ts#schema -->
+<!-- example: src/app/16-forms/logic/order.ts -->
 
 ```ts
-readonly orderForm = form(this.orderModel, (path) => {
-  readonly(path.orderId);
+import {Component, signal} from '@angular/core';
+import {disabled, form, FormField, hidden, readonly, required} from '@angular/forms/signals';
 
-  hidden(path.giftMessage, {when: ({valueOf}) => !valueOf(path.isGift)});
-  required(path.giftMessage);
+@Component({
+  selector: 'app-forms-order',
+  imports: [FormField],
+  template: `
+    <label>Order number <input [formField]="orderForm.orderId" /></label>
 
-  disabled(path.coupon, {
-    when: ({valueOf}) => (valueOf(path.total) < 10 ? 'Coupons start at 10 €.' : false),
+    <label><input type="checkbox" [formField]="orderForm.isGift" /> This is a gift</label>
+    @if (!orderForm.giftMessage().hidden()) {
+      <label>Gift message <input [formField]="orderForm.giftMessage" /></label>
+    }
+
+    <label>Total <input type="number" [formField]="orderForm.total" /></label>
+    <label>Coupon <input [formField]="orderForm.coupon" /></label>
+    @for (reason of orderForm.coupon().disabledReasons(); track $index) {
+      <p class="reason">{{ reason.message }}</p>
+    }
+
+    <button [disabled]="orderForm().invalid()">Order</button>
+  `,
+})
+export class FormsOrder {
+  readonly orderModel = signal({
+    orderId: 'A-1024',
+    isGift: false,
+    giftMessage: '',
+    total: 5,
+    coupon: '',
   });
-});
+
+  readonly orderForm = form(this.orderModel, (path) => {
+    readonly(path.orderId);
+
+    hidden(path.giftMessage, {when: ({valueOf}) => !valueOf(path.isGift)});
+    required(path.giftMessage);
+
+    disabled(path.coupon, {
+      when: ({valueOf}) => (valueOf(path.total) < 10 ? 'Coupons start at 10 €.' : false),
+    });
+  });
+}
 ```
 
 - `readonly(path)` — the user can see and copy the value but not change it. `[formField]` sets the `readonly` attribute.
@@ -469,61 +583,91 @@ readonly orderForm = form(this.orderModel, (path) => {
 ```
 <!-- prettier-ignore-end -->
 
-- `disabled(path, { when })` — the field is visible but cannot be changed. When `when` returns a string instead of `true`, the string becomes a **disabled reason**, which you can show from `disabledReasons()`.
+- `disabled(path, { when })` — the field is visible but cannot be changed. When `when` returns a string instead of `true`, the string becomes a **disabled reason**, which you can show from `disabledReasons()`. Each reason has a `message`; the template above shows them with `@for`.
 - Hidden, disabled and read-only fields are not validated. Here the gift message is `required`, but only while it is visible.
 - `debounce(path, ...)` (above) is also a logic rule.
 
 ### Submitting the form
 
-The `FormRoot` directive connects a `<form>` element with your form. Pass a `submission` option to `form()` with an `action`:
+The `FormRoot` directive connects a `<form>` element with your form. Pass a `submission` option to `form()` with an `action`.
 
-<!-- example: src/app/16-forms/submit/contact.ts#form -->
+The example pretends to save on a server. One email address is already used, so the server says `ok: false` for it:
+
+<!-- example: src/app/16-forms/submit/fake-server.ts -->
 
 ```ts
-readonly contactForm = form(
-  this.contactModel,
-  (path) => {
-    required(path.name);
-    required(path.email, {message: 'Enter an email address.'});
-    email(path.email, {message: 'This is not an email address.'});
-  },
-  {
-    submission: {
-      action: async (field) => {
-        const result = await saveContact(field().value());
-        if (!result.ok) {
-          return {
-            kind: 'emailTaken',
-            message: 'This email address is already used.',
-            fieldTree: field.email,
-          };
+export interface Contact {
+  name: string;
+  email: string;
+}
+
+/** Pretends to save the contact on a server. One email address is already used. */
+export async function saveContact(contact: Contact): Promise<{ok: boolean}> {
+  await new Promise((resolve) => setTimeout(resolve, 30));
+  return {ok: contact.email !== 'taken@example.uz'};
+}
+```
+
+The component imports `FormRoot` next to `FormField`:
+
+<!-- example: src/app/16-forms/submit/contact.ts -->
+
+```ts
+import {Component, signal} from '@angular/core';
+import {email, form, FormField, FormRoot, required} from '@angular/forms/signals';
+import {Contact, saveContact} from './fake-server';
+
+@Component({
+  selector: 'app-forms-contact',
+  imports: [FormField, FormRoot],
+  template: `
+    <form [formRoot]="contactForm">
+      <label>Name <input [formField]="contactForm.name" /></label>
+      <label>Email <input type="email" [formField]="contactForm.email" /></label>
+      @for (error of contactForm.email().errors(); track error.kind) {
+        @if (contactForm.email().touched()) {
+          <p class="error">{{ error.message }}</p>
         }
-        this.saved.set(field.name().value());
-        return undefined;
+      }
+      <button type="submit" [disabled]="contactForm().submitting()">
+        {{ contactForm().submitting() ? 'Saving…' : 'Save' }}
+      </button>
+    </form>
+    @if (saved()) {
+      <p class="saved">Saved {{ saved() }}.</p>
+    }
+  `,
+})
+export class FormsContact {
+  readonly contactModel = signal<Contact>({name: '', email: ''});
+  readonly saved = signal('');
+
+  readonly contactForm = form(
+    this.contactModel,
+    (path) => {
+      required(path.name);
+      required(path.email, {message: 'Enter an email address.'});
+      email(path.email, {message: 'This is not an email address.'});
+    },
+    {
+      submission: {
+        action: async (field) => {
+          const result = await saveContact(field().value());
+          if (!result.ok) {
+            return {
+              kind: 'emailTaken',
+              message: 'This email address is already used.',
+              fieldTree: field.email,
+            };
+          }
+          this.saved.set(field.name().value());
+          return undefined;
+        },
       },
     },
-  },
-);
+  );
+}
 ```
-
-<!-- prettier-ignore-start -->
-<!-- example: src/app/16-forms/submit/contact.ts#template -->
-
-```html
-<form [formRoot]="contactForm">
-  <label>Name <input [formField]="contactForm.name" /></label>
-  <label>Email <input type="email" [formField]="contactForm.email" /></label>
-  @for (error of contactForm.email().errors(); track error.kind) {
-    @if (contactForm.email().touched()) {
-      <p class="error">{{ error.message }}</p>
-    }
-  }
-  <button type="submit" [disabled]="contactForm().submitting()">
-    {{ contactForm().submitting() ? 'Saving…' : 'Save' }}
-  </button>
-</form>
-```
-<!-- prettier-ignore-end -->
 
 When the user presses the submit button (or Enter in a field), Angular:
 
@@ -537,11 +681,22 @@ Return `undefined` from `action` for success. More options: `onInvalid` runs whe
 
 ### Reusable schemas and lists
 
-Rules that you need in many forms go into a **schema** object made with `schema()`:
+Rules that you need in many forms go into a **schema** object made with `schema()`. `apply`, `applyWhen` and `applyEach` use it:
 
 <!-- example: src/app/16-forms/schemas/party.ts#address-schema -->
 
 ```ts
+import {Component, signal} from '@angular/core';
+import {
+  apply,
+  applyEach,
+  applyWhen,
+  form,
+  FormField,
+  required,
+  schema,
+} from '@angular/forms/signals';
+
 export interface Address {
   street: string;
   city: string;
@@ -550,6 +705,23 @@ export interface Address {
 export const addressSchema = schema<Address>((path) => {
   required(path.street, {message: 'Enter the street.'});
   required(path.city, {message: 'Enter the city.'});
+});
+
+interface Guest {
+  name: string;
+}
+```
+
+The model has two addresses, a checkbox and a list of guests:
+
+<!-- example: src/app/16-forms/schemas/party.ts#model -->
+
+```ts
+readonly partyModel = signal({
+  billing: {street: '', city: ''} as Address,
+  sameAddress: true,
+  delivery: {street: '', city: ''} as Address,
+  guests: [{name: ''}] as Guest[],
 });
 ```
 
@@ -594,6 +766,7 @@ addGuest() {
   this.partyModel.update((m) => ({...m, guests: [...m.guests, {name: ''}]}));
 }
 
+// `_` is the name for a parameter that the function does not use (here: the guest).
 removeGuest(index: number) {
   this.partyModel.update((m) => ({...m, guests: m.guests.filter((_, i) => i !== index)}));
 }
@@ -606,12 +779,17 @@ removeGuest(index: number) {
 <!-- example: src/app/16-forms/metadata/help-text.ts#key -->
 
 ```ts
+import {Component, computed, signal} from '@angular/core';
+import {createMetadataKey, form, FormField, metadata} from '@angular/forms/signals';
+
 export const HELP_TEXT = createMetadataKey<string>();
 ```
 
 <!-- example: src/app/16-forms/metadata/help-text.ts#form -->
 
 ```ts
+readonly nameModel = signal({username: ''});
+
 readonly nameForm = form(this.nameModel, (path) => {
   metadata(path.username, HELP_TEXT, ({value}) =>
     value().length < 3 ? 'At least 3 characters.' : 'Looks good.',
@@ -630,6 +808,9 @@ You can use `[formField]` on your own components, not only on `<input>`. A compo
 <!-- example: src/app/16-forms/custom-control/star-rating.ts#control -->
 
 ```ts
+import {Component, input, model, output} from '@angular/core';
+import {FormValueControl} from '@angular/forms/signals';
+
 @Component({
   selector: 'app-forms-star-rating',
   template: `
@@ -742,7 +923,7 @@ logIn() {
 - Import `ReactiveFormsModule` for `[formGroup]`, `formControlName` and `(ngSubmit)`.
 - `nonNullable: true` means: `reset()` goes back to `''`, not to `null`, so the type stays `string`.
 - Validators are functions from the `Validators` class: `required`, `email`, `minLength(8)`, `min`, `max`, `pattern`. A custom validator is a function that gets the control and returns `null` (valid) or an error object such as `{ forbidden: true }`.
-- Read the state with properties, not signals: `loginForm.invalid`, `controls.email.touched`, `hasError('email')`. The value is `loginForm.value` or `loginForm.getRawValue()`; changes arrive in the Observable `valueChanges`.
+- Read the state with properties, not signals: `loginForm.invalid`, `controls.email.touched`, `hasError('email')`. The value is `loginForm.value` or `loginForm.getRawValue()`; changes arrive in the Observable `valueChanges`. `const {email} = this.loginForm.getRawValue()` is destructuring ([chapter 15](15-routing.md#redirects-and-the-wildcard-route)): it takes `email` out of the value object.
 - Angular adds CSS classes to the inputs: `ng-valid`/`ng-invalid`, `ng-touched`/`ng-untouched`, `ng-dirty`/`ng-pristine`.
 
 `NonNullableFormBuilder` writes the same tree with less code. A `FormArray` holds a list:
@@ -821,13 +1002,17 @@ For new forms in Angular 22, use Signal Forms. In an app that already uses react
 
 ### Forgetting to call the field
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 @if (signupForm.email.valid()) {
-<p>OK</p>
+  <p>OK</p>
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] TS2339: Property 'valid' does not exist on type 'FieldTree<string, string, "writable">'. [plugin angular-compiler]
@@ -867,6 +1052,8 @@ export class FormsSignup {
 
 ### Forgetting to import `FormField`
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -876,6 +1063,8 @@ export class FormsSignup {
 })
 ```
 
+<!-- prettier-ignore-end -->
+
 ```text
 ✘ [ERROR] NG8002: Can't bind to 'formField' since it isn't a known property of 'input'. Find more at https://next.angular.dev/errors/NG8002 [plugin angular-compiler]
 ```
@@ -884,13 +1073,17 @@ Fix: add `imports: [FormField]` (from `@angular/forms/signals`) to the component
 
 ### `null` in the model
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
-readonly userModel = signal({ name: null as string | null });
+readonly userModel = signal({name: null as string | null});
 readonly userForm = form(this.userModel);
 // template: <input [formField]="userForm.name" />
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] TS2322: Type 'WritableSignal<string | null>' is not assignable to type '{ (): string; set: (v: string) => void; } | { (): number | null; set: (v: number | null) => void; }'.
@@ -924,11 +1117,15 @@ const emptyProfile: Profile = {
 
 ### Setting `min`, `max`, `value` or `readonly` on the element
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 <input type="number" min="16" [formField]="ageForm.age" />
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] NG8022: Setting the 'min' attribute is not allowed on nodes using the '[formField]' directive [plugin angular-compiler]
@@ -966,6 +1163,8 @@ readonly regForm = form(this.regModel, (path) => {
 
 ### `[formGroup]` without `ReactiveFormsModule`
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -975,6 +1174,8 @@ readonly regForm = form(this.regModel, (path) => {
 })
 ```
 
+<!-- prettier-ignore-end -->
+
 ```text
 ✘ [ERROR] NG8002: Can't bind to 'formGroup' since it isn't a known property of 'form'. Find more at https://next.angular.dev/errors/NG8002 [plugin angular-compiler]
 ```
@@ -983,11 +1184,15 @@ Fix: add `imports: [ReactiveFormsModule]` (from `@angular/forms`), as in `FormsR
 
 ### `ngModel` inside a form without `name`
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 <form><input [(ngModel)]="email" /></form>
 ```
+
+<!-- prettier-ignore-end -->
 
 The build passes, but the component fails when it is created:
 

@@ -244,7 +244,7 @@ When you bind an object or an array, Angular sees a change only when you assign 
 
 ### Event binding
 
-`(event)="statement"` runs a statement when the element fires the event. Any DOM event works: `click`, `input`, `keyup`, `submit`, `focus`, `mouseover` and so on.
+`(event)="statement"` runs a statement when the event happens on the element. (People also say the element **fires** the event.) Any DOM event works: `click`, `input`, `keyup`, `submit`, `focus`, `mouseover` and so on.
 
 <!-- example: src/app/05-templates-and-binding/events/search-box.ts -->
 
@@ -289,6 +289,8 @@ export class TplSearchBox {
 - **`event.preventDefault()`** stops the browser's normal action. Here the link does not open `/help`.
 
 Prefer calling a method: `(click)="search()"`. Short assignments such as `(click)="editing = true"` are fine too. Several statements are separated by `;`.
+
+This guide writes `type="button"` on its buttons. Inside a `<form>`, a button without `type` is a submit button: a click also sends the form. `type="button"` makes it a plain button. Outside a form both behave the same, but the habit avoids surprises when you later put the button into a form.
 
 ### Bindings on the host element
 
@@ -341,7 +343,35 @@ export class TplToggleChip {
 
 ### Expression syntax
 
-Template expressions are almost JavaScript, with some limits.
+Template expressions are almost JavaScript, with some limits. Here is a class with a list of lessons. The second lesson has no teacher (`teacher?` makes the property optional, see [chapter 3](03-typescript-you-need.md#optional-properties-and-parameters)), and `room` is a string or `null`:
+
+<!-- example: src/app/05-templates-and-binding/expressions/expressions.ts -->
+
+```ts
+import {Component} from '@angular/core';
+
+interface Lesson {
+  title: string;
+  done: boolean;
+  teacher?: {name: string};
+}
+
+@Component({
+  selector: 'app-expressions',
+  templateUrl: './expressions.html',
+})
+export class TplExpressions {
+  lessons: Lesson[] = [
+    {title: 'Angular', done: true, teacher: {name: 'Ms. Rahimova'}},
+    {title: 'TypeScript', done: false},
+    {title: 'CSS', done: true},
+  ];
+  room: string | null = null;
+  checks = 0;
+}
+```
+
+The template `expressions.html` uses many kinds of expressions:
 
 <!-- example: src/app/05-templates-and-binding/expressions/expressions.html -->
 
@@ -354,7 +384,7 @@ Template expressions are almost JavaScript, with some limits.
 <button type="button" (click)="room = 'B12'; checks = checks + 1">Set room</button>
 ```
 
-The class has a `lessons` array (two of three lessons are done, and the second has no teacher), `room = null` and `checks = 0`. The page shows `Busy week`, `Room: not set yet`, `Teacher: unknown`, `3 lessons` and `Done: 2`.
+The page shows `Busy week`, `Room: not set yet`, `Teacher: unknown`, `3 lessons` and `Done: 2`.
 
 What you can use:
 
@@ -705,11 +735,16 @@ Each test follows the same steps: do something (click, type), wait with `await f
 
 ### Forgetting the square brackets
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
-<button type="button" disabled="isSaving">Save</button> <img src="photoUrl" />
+<button type="button" disabled="isSaving">Save</button>
+<img src="photoUrl" />
 ```
+
+<!-- prettier-ignore-end -->
 
 There is no error, but the button is **always** disabled, even when `isSaving` is `false`, and the image tries to load a file named `photoUrl`. Without brackets, the value is the text `"isSaving"`, not the field. Add the brackets so the value is an expression:
 
@@ -723,11 +758,15 @@ There is no error, but the button is **always** disabled, even when `isSaving` i
 
 ### Binding to a property that does not exist
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 <td [colspan]="columns">Final scores</td>
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] NG8002: Can't bind to 'colspan' since it isn't a known property of 'td'. Find more at https://next.angular.dev/errors/NG8002 [plugin angular-compiler]
@@ -745,11 +784,15 @@ You also get NG8002 for a typo in a property name, and for an input of a compone
 
 ### A typo in a field name
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 <p>{{ titel }}</p>
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] TS2551: Property 'titel' does not exist on type 'TplTitle'. Did you mean 'title'? [plugin angular-compiler]
@@ -759,11 +802,15 @@ Angular checks template expressions against the class, like TypeScript code. The
 
 ### An assignment in a binding
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 <p>{{ count = count + 1 }}</p>
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] NG5002: Parser Error: Bindings cannot contain assignments at column 10 in [ count = count + 1 ] in counter.ts@1:52 [plugin angular-compiler]
@@ -773,11 +820,16 @@ Bindings only read values. Change data in an event listener, such as `(click)="c
 
 ### Assigning to a `@let` variable
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
-@let value = 1; <button type="button" (click)="value = value + 1">Increment</button>
+@let value = 1;
+<button type="button" (click)="value = value + 1">Increment</button>
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] NG8015: Cannot assign to @let declaration 'value'. [plugin angular-compiler]
@@ -787,11 +839,15 @@ A `@let` variable always equals its expression. Keep changing data in a field of
 
 ### Using a global such as `Math`
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 <p>{{ Math.round(price) }}</p>
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] TS2339: Property 'Math' does not exist on type 'TplPrice'. [plugin angular-compiler]
@@ -801,11 +857,15 @@ Templates see only the component's members. Do the work in the class, for exampl
 
 ### Forgetting the parentheses of a method in an event binding
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 <button type="button" (click)="search">Search</button>
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ▲ [WARNING] NG8111: NG8111: Function in event binding should be invoked: search(). Find more at https://v22.angular.dev/extended-diagnostics/NG8111 [plugin angular-compiler]
@@ -814,6 +874,8 @@ Templates see only the component's members. Do the work in the class, for exampl
 This is only a warning, so the app builds, but nothing happens on click: the statement reads the method without calling it. Write `(click)="search()"`.
 
 ### A plain field changed outside an event
+
+<!-- prettier-ignore-start -->
 
 <!-- wrong -->
 
@@ -833,13 +895,15 @@ export class TplStatus {
 }
 ```
 
+<!-- prettier-ignore-end -->
+
 There is no error, but the page keeps showing `Loading…`, even though the field is now `'Done!'`. Angular checks a component after its template's event listeners run. A timer is not one of them, so Angular does not know that something changed. Hold such values in a signal; [chapter 7](07-signals.md) shows how.
 
 ## 8. Try it yourself
 
 Build a character counter for a message:
 
-- a `<textarea>` with the label "Your message";
+- a `<textarea>` with the accessible name "Your message": set it with `aria-label="Your message"`, the label that screen readers read (a visible `<label>` also works);
 - below it, a paragraph that shows `6 / 20` (characters typed / limit), updated while the user types;
 - when the text is longer than the limit, the paragraph gets the class `too-long` and turns red.
 

@@ -5,7 +5,7 @@ import {Component, computed, signal} from '@angular/core';
   template: `
     <textarea #box (input)="text.set(box.value)"></textarea>
     <p [class.warning]="tooLong()">{{ remaining() }} characters left</p>
-    <button [disabled]="tooLong() || text() === ''">Send</button>
+    <button type="button" [disabled]="tooLong() || text() === ''">Send</button>
   `,
   styles: `
     .warning {

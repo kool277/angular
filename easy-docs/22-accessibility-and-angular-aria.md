@@ -172,7 +172,9 @@ export class A11yRecipeSearch {
 - `role="search"` on the form and the `<label for="query">` give the form and the field names.
 - `<p role="status">` is a **live region**: when its text changes, screen readers read the new text without moving the focus. `role="status"` is the same as `aria-live="polite"`: the reader waits until it has finished the current sentence. Use `aria-live="assertive"` only for urgent messages.
 - After the search, the focus moves to the "Results" heading. `tabindex="-1"` lets code focus an element that is not normally focusable.
-- `afterNextRender` waits until the heading is in the DOM. Called in a method, it needs the `injector` option, because a method is not an injection context ([chapter 13](13-lifecycle.md)).
+- `afterNextRender` waits until the heading is in the DOM. [Chapter 13](13-lifecycle.md#calling-afternextrender-in-a-method) showed that `afterNextRender` in a method fails with `NG0203`, because a method is not an injection context. There the fix was a directive whose constructor registers the callback. That does not fit here: the heading is created only once, but the focus must move after **every** search. So the component uses a second way:
+  - `inject(Injector)` in a field gets the component's own **injector** (the object that hands out dependencies, see [chapter 14](14-services-and-dependency-injection.md)). A field initializer is an injection context, so this works.
+  - The option `{ injector: this.injector }` tells `afterNextRender` which injector to use. With it, `afterNextRender` works outside the injection context too.
 
 <!-- example: src/app/22-accessibility-and-angular-aria/search/search.spec.ts -->
 
@@ -205,15 +207,23 @@ describe('A11yRecipeSearch', () => {
 });
 ```
 
+Focus works only on elements that are part of the page. The element that `TestBed` creates is not attached to `document` by default, so the first test adds it with `document.body.appendChild(element)`, and removes it again at the end with `element.remove()`. You need this only in tests that check the focus (`document.activeElement`).
+
 More focus and announcement help:
 
 - After a route change, move the focus to the main heading of the new page. `routerLinkActive` ([chapter 15](15-routing.md)) has an input `ariaCurrentWhenActive="page"` that sets `aria-current="page"` on the active link, so screen readers know which page is open.
-- The Angular CDK (`@angular/cdk/a11y`, a separate library installed in the examples workspace) has `LiveAnnouncer`, a service that announces a message from code, and `cdkTrapFocus`, which keeps the focus inside a dialog. Use them if a live region in the template is not enough.
+- The Angular CDK (`@angular/cdk/a11y`; install it with `ng add @angular/cdk`, see [chapter 19](19-testing.md#component-harnesses)) has `LiveAnnouncer`, a service that announces a message from code, and `cdkTrapFocus`, which keeps the focus inside a dialog. Use them if a live region in the template is not enough.
 - Content that a `@defer` block loads later ([chapter 20](20-performance-defer-and-zoneless.md)) is not announced by itself. Put the block inside an `aria-live="polite"` element.
 
 ### Angular Aria: headless widgets
 
-`@angular/aria` is a separate package (`npm install @angular/aria`); the examples workspace has version 22.2.7. Its directives follow the **WAI-ARIA patterns**: the official W3C descriptions of how widgets such as tabs, menus and trees must behave for keyboards and screen readers. Neither the adev pages nor the package mark Angular Aria as experimental or developer preview in this version.
+`@angular/aria` is a separate package. Install it in the version that fits your Angular version:
+
+```shell
+npm install @angular/aria@22.2
+```
+
+The examples workspace has version 22.2.7. Its directives follow the **WAI-ARIA patterns**: the official descriptions by the W3C (the group that writes web standards such as HTML) of how widgets such as tabs, menus and trees must behave for keyboards and screen readers. Neither the adev pages nor the package mark Angular Aria as experimental or developer preview in this version.
 
 Angular Aria is **headless**: the directives add behavior (roles, ARIA states, keyboard navigation, focus, right-to-left support), but no HTML and no styles. You write the HTML and CSS; you decide how it looks. If you want ready-made, styled components, use Angular Material instead. For a single simple control, native HTML (`<button>`, `<select>`, `<input type="radio">`) is often enough.
 
@@ -272,13 +282,13 @@ export class A11yRecipeTabs {
 </div>
 ```
 
-| Directive                    | What it does                                                                                                                                                           |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ngTabs`                     | The container of the whole widget.                                                                                                                                     |
-| `ngTabList`                  | The row of tabs: `role="tablist"`, arrow keys, Home and End. `[(selectedTab)]` is a two-way binding with the selected tab's `value`.                                   |
-| `ngTab value="..."`          | One tab: `role="tab"`, `aria-selected`, `aria-controls`. The `value` is required and links it to a panel.                                                              |
-| `ngTabPanel value="..."`     | The panel with the same `value`: `role="tabpanel"` and `aria-labelledby`. A hidden panel gets `inert`.                                                                 |
-| `<ng-template ngTabContent>` | The panel's content. It is created only when the tab is first opened (**lazy**). Add `[preserveContent]="true"` on the panel to keep it after the user leaves the tab. |
+| Directive                    | What it does                                                                                                                                                                                                                 |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ngTabs`                     | The container of the whole widget.                                                                                                                                                                                           |
+| `ngTabList`                  | The row of tabs: `role="tablist"`, arrow keys, Home and End. `[(selectedTab)]` is a two-way binding with the selected tab's `value`.                                                                                         |
+| `ngTab value="..."`          | One tab: `role="tab"`, `aria-selected`, `aria-controls`. The `value` is required and links it to a panel.                                                                                                                    |
+| `ngTabPanel value="..."`     | The panel with the same `value`: `role="tabpanel"` and `aria-labelledby`. A hidden panel gets `inert` (an HTML attribute that makes an element and its children unreachable for the mouse, the keyboard and screen readers). |
+| `<ng-template ngTabContent>` | The panel's content. It is created only when the tab is first opened (**lazy**). Add `[preserveContent]="true"` on the panel to keep it after the user leaves the tab.                                                       |
 
 `ngTabList` also has `orientation` (`"horizontal"` or `"vertical"`), `selectionMode` (`"follow"`: the focused tab is selected at once, the default here; `"explicit"`: Enter or Space selects) and `disabled`. A tab can be `disabled` too.
 
@@ -495,7 +505,8 @@ export class A11yToppings {
 
 - `ngListbox` gives `role="listbox"`, arrow-key navigation and type-ahead (typing letters jumps to a matching option). `[(value)]` is always an **array** of the selected values, also for a single choice.
 - `[multi]="true"` allows several selected options (`aria-multiselectable="true"`).
-- `selectionMode="explicit"`: a click, Enter or Space toggles an option; the arrow keys only move. With `"follow"`, the option under the focus is selected.
+- `selectionMode="explicit"`: a click, Enter or Space toggles an option; the arrow keys only move. With `"follow"` (the default), the option under the focus is selected.
+- `orientation`: `"vertical"` (the default; up and down arrow keys) or `"horizontal"` (left and right arrow keys).
 - `ngOption [value]="..."` is one option (`role="option"`, `aria-selected`).
 - `aria-labelledby` gives the listbox its name from the `<p>` above it.
 
@@ -684,11 +695,15 @@ describe('A11yNoteEditor', () => {
 
 ### A clickable `<div>` instead of a `<button>`
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 <div class="button" (click)="save()">Save</div>
 ```
+
+<!-- prettier-ignore-end -->
 
 No error, and it works with a mouse. But the keyboard cannot reach it (it is not in the Tab order), Enter does nothing, and a screen reader says only "Save", not "button". Fix: use a `<button type="button">`, as in `A11yNoteEditor`:
 
@@ -715,6 +730,8 @@ No error, and it works with a mouse. But the keyboard cannot reach it (it is not
 
 ### Forgetting to import a directive
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -725,6 +742,8 @@ No error, and it works with a mouse. But the keyboard cannot reach it (it is not
 })
 export class A11yFaq {}
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] NG8002: Can't bind to 'panel' since it isn't a known property of 'button'. Find more at https://next.angular.dev/errors/NG8002 [plugin angular-compiler]
@@ -753,12 +772,16 @@ export class A11yFaq {}
 
 ### A template reference without the directive's name
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 <button type="button" ngAccordionTrigger [panel]="returns">Can I return an item?</button>
 <div ngAccordionPanel #returns></div>
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] TS2740: Type 'HTMLDivElement' is missing the following properties from type 'AccordionPanel': _elementRef, element, _deferredContentAware, _accordionContent, and 4 more. [plugin angular-compiler]
@@ -768,11 +791,15 @@ export class A11yFaq {}
 
 ### A tab without `value`
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 <li ngTab>Ingredients</li>
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] NG8008: Required input 'value' from directive Tab must be specified. [plugin angular-compiler]

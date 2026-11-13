@@ -5,7 +5,7 @@
 You should know:
 
 - `main.ts`, `bootstrapApplication` and `app.config.ts` ([Install Angular and make your first app](02-install-and-first-app.md));
-- classes, interfaces and `abstract` classes ([The TypeScript you need](03-typescript-you-need.md));
+- classes, `extends` and interfaces ([The TypeScript you need](03-typescript-you-need.md));
 - components and the component tree ([Components](04-components.md));
 - `signal` and `computed`, and the word "injection context" ([Signals](07-signals.md));
 - directives, `inject(ElementRef)` and `inject(TemplateRef)` ([Directives](11-directives.md));
@@ -134,7 +134,7 @@ export class DiLogger {
 }
 ```
 
-Use `@Service()` for new services. Use `@Injectable` when you need something `@Service` cannot do, for example the provider options `useClass` or `useFactory` below, or constructor parameters (see "In older code").
+Use `@Service()` for new services. Use `@Injectable` when you need something `@Service` cannot do: constructor parameters (see "In older code" below), or the options `useClass`, `useValue` or `useExisting` inside the decorator itself, for example `@Injectable({providedIn: 'root', useClass: OtherLogger})`. (`@Service` has only one such option, `factory`. The `providers` lists in the next sections work with both decorators.)
 
 A service can inject other services:
 
@@ -261,15 +261,38 @@ export const shopConfig: ApplicationConfig = {
 };
 ```
 
-An app that starts with `bootstrapApplication(App, shopConfig)` gets `'https://api.example.com'` for `inject(API_URL)`, and the EUR settings instead of the factory's UZS settings. The test of `src/app/14-services-and-dependency-injection/tokens/tokens.spec.ts` checks both cases.
+An app that starts with `bootstrapApplication(App, shopConfig)` gets `'https://api.example.com'` for `inject(API_URL)`, and the EUR settings instead of the factory's UZS settings.
 
 Many Angular features are set up with functions named `provide...()` in this list, for example `provideRouter(routes)` ([chapter 15](15-routing.md)) and `provideHttpClient()` ([chapter 17](17-http-and-async-data.md)). Each returns ready-made providers.
 
 ### The four kinds of providers
 
-<!-- example: src/app/14-services-and-dependency-injection/provider-kinds/provider-kinds.ts#providers -->
+The example needs two tokens and two storage classes. All of it is in one file:
+
+<!-- example: src/app/14-services-and-dependency-injection/provider-kinds/provider-kinds.ts -->
 
 ```ts
+import {Component, Injectable, InjectionToken, inject} from '@angular/core';
+
+export const SITE_NAME = new InjectionToken<string>('SITE_NAME');
+export const GREETING = new InjectionToken<string>('GREETING');
+
+@Injectable({providedIn: 'root'})
+export class DiUserStorage {
+  read(key: string): string | null {
+    return localStorage.getItem(key);
+  }
+}
+
+@Injectable()
+export class DiMemoryUserStorage extends DiUserStorage {
+  private readonly data = new Map([['user', 'Aziz']]);
+
+  override read(key: string): string | null {
+    return this.data.get(key) ?? null;
+  }
+}
+
 @Component({
   selector: 'app-di-provider-kinds',
   providers: [
@@ -302,7 +325,10 @@ export class DiProviderKinds {
 | `useFactory`  | `{ provide: GREETING, useFactory: () => ... }`                 | Call this function to make the value. The function is an injection context, so it may use `inject()`. |
 | `useExisting` | `{ provide: DiMemoryUserStorage, useExisting: DiUserStorage }` | A second name for an existing provider: both tokens give the **same** object.                         |
 
-The page shows "Welcome to Tasty Recipes, Aziz!" and "Same storage object: true". `DiMemoryUserStorage` has `@Injectable()` without `providedIn`: it is not provided anywhere by itself, only through `useClass`.
+- `DiUserStorage` reads from `localStorage`, the browser's small key–value store.
+- `DiMemoryUserStorage` **extends** it ([chapter 03](03-typescript-you-need.md)) and keeps the values in a `Map` instead. `override` says: this method replaces the parent class's method with the same name.
+
+The page shows "Welcome to Tasty Recipes, Aziz!" (the name comes from the `Map` in `DiMemoryUserStorage`) and "Same storage object: true". `DiMemoryUserStorage` has `@Injectable()` without `providedIn`: it is not provided anywhere by itself, only through `useClass`.
 
 One more option: `multi: true` lets several providers add values to the same token. Injecting the token then gives an array of all values. Angular uses this for features such as HTTP interceptors.
 
@@ -376,7 +402,17 @@ flowchart BT
   P --> N["null injector: error No provider"]
 ```
 
-An example with a token that has a root default:
+An example with a token that has a root default. The token is in its own file. Its factory gives `'light'`:
+
+<!-- example: src/app/14-services-and-dependency-injection/hierarchy/theme.ts -->
+
+```ts
+import {InjectionToken} from '@angular/core';
+
+export const THEME = new InjectionToken<string>('THEME', {factory: () => 'light'});
+```
+
+The components:
 
 <!-- example: src/app/14-services-and-dependency-injection/hierarchy/theme-demo.ts -->
 
@@ -433,6 +469,12 @@ The second argument of `inject()` has four options:
 <!-- example: src/app/14-services-and-dependency-injection/modifiers/modifiers.ts#inspector -->
 
 ```ts
+import {Component, Directive, InjectionToken, inject} from '@angular/core';
+import {THEME} from '../hierarchy/theme';
+
+// No provider anywhere gives a value for this token.
+export const BETA_FEATURES = new InjectionToken<boolean>('BETA_FEATURES');
+
 @Component({
   selector: 'app-di-theme-inspector',
   providers: [{provide: THEME, useValue: 'contrast'}],
@@ -451,7 +493,7 @@ export class DiThemeInspector {
 }
 ```
 
-`DiThemeInspector` is used inside a component that provides `'dark'`. It shows "default: contrast", "self: contrast", "skipSelf: dark" and "optional: not provided".
+`DiThemeInspector` is used inside `DiModifiersDemo` (shown at the end of this section), which provides `'dark'`. It shows "default: contrast", "self: contrast", "skipSelf: dark" and "optional: not provided".
 
 `host` matters for directives that should only take a value from the component they are used in, not from somewhere far up:
 
@@ -481,11 +523,29 @@ export class DiThemedCard {}
 
 In `DiPlainCard` the probe finds nothing (`'none'`), even though a parent provides `'dark'` and the root has `'light'`. In `DiThemedCard` it finds `'card'`. Note that `host` sees the host component's `viewProviders`, not its `providers`. You will rarely need `self`, `skipSelf` and `host`; `optional` is the one you will use most.
 
+The demo component that holds all three and provides `'dark'`:
+
+<!-- example: src/app/14-services-and-dependency-injection/modifiers/modifiers.ts#demo -->
+
+```ts
+@Component({
+  selector: 'app-di-modifiers-demo',
+  imports: [DiThemeInspector, DiPlainCard, DiThemedCard],
+  providers: [{provide: THEME, useValue: 'dark'}],
+  template: `
+    <app-di-theme-inspector />
+    <app-di-plain-card />
+    <app-di-themed-card />
+  `,
+})
+export class DiModifiersDemo {}
+```
+
 ### Lightweight injection tokens
 
 This is mostly for people who write libraries. When a class is used as a **value** (as a token in `inject()` or in a query such as `contentChild(DiCardHeader)`), the build must keep that class's code, even if the app never uses it. For a big, optional component that is a waste.
 
-The fix is a small `abstract` class as the token. The real component provides itself under that token with `useExisting`:
+The fix is a small **abstract class** as the token. You write it as `abstract class Name {}`. An abstract class cannot be created with `new`; other classes can only `extend` it. Unlike an interface, it still exists when the app runs, so it can be a key for `inject()` and for queries. The real component extends it and provides itself under that token with `useExisting`:
 
 <!-- example: src/app/14-services-and-dependency-injection/lightweight/light-card.ts#token -->
 
@@ -517,7 +577,22 @@ export class DiLightCard {
 
 ### Loading a service only when it is needed
 
-Some services use a large library that most users never need, for example an export to a spreadsheet. `injectAsync` loads such a service's code only on first use:
+Some services use a large library that most users never need, for example an export to a spreadsheet. Here is such a service (imagine a big library inside it):
+
+<!-- example: src/app/14-services-and-dependency-injection/lazy/report-exporter.ts -->
+
+```ts
+import {Service} from '@angular/core';
+
+@Service()
+export class DiReportExporter {
+  toCsv(rows: string[][]): string {
+    return rows.map((row) => row.join(',')).join('\n');
+  }
+}
+```
+
+`injectAsync` loads such a service's code only on first use:
 
 <!-- example: src/app/14-services-and-dependency-injection/lazy/report.ts -->
 
@@ -552,7 +627,7 @@ export class DiReport {
 - `import('./report-exporter')` is a dynamic import: the build puts `report-exporter.ts` into a separate file, which the browser downloads only when this function runs.
 - `this.exporter()` returns a `Promise`. The first call downloads the code and creates the service; later calls reuse it.
 - The service must be auto-provided (`@Service()` or `@Injectable({ providedIn: 'root' })`).
-- The option `{ prefetch: onIdle }` starts the download early, when the browser has nothing else to do.
+- `injectAsync` takes options as a second argument. `injectAsync(() => import('./report-exporter').then((m) => m.DiReportExporter), {prefetch: onIdle})` starts the download early, when the browser has nothing else to do. Import `onIdle` from `@angular/core`, like `injectAsync`.
 
 ### In older code: constructor parameters
 
@@ -731,6 +806,8 @@ describe('DiRecipeList with DiFavoritesStore', () => {
 
 ### A service that nobody provides
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -742,6 +819,8 @@ class TmpA {
   protected readonly draft = inject(DiDraftStore);
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 `DiDraftStore` has `autoProvided: false`, and `TmpA` has no `providers`. The test shows:
 
@@ -783,6 +862,8 @@ export class DiNoteEditor {
 
 ### Calling `inject()` in a method
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -790,6 +871,8 @@ save() {
   inject(DiLogger).log('Saved');
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 Error: NG0203: The `_DiLogger` token injection failed. `inject()` function must be called from an injection context such as a constructor, a factory function, a field initializer, or a function used with `runInInjectionContext`. Find more at https://v22.angular.dev/errors/NG0203
@@ -812,6 +895,8 @@ export class DiOrderService {
 
 ### Two services that need each other
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -826,6 +911,8 @@ class DiUserService {
 }
 ```
 
+<!-- prettier-ignore-end -->
+
 ```text
 Error: NG0200: Circular dependency detected for `_DiAuthService`. Source: DynamicTestModule. Path: _DiAuthService -> _DiUserService -> _DiAuthService. Find more at https://v22.angular.dev/errors/NG0200
 ```
@@ -833,6 +920,8 @@ Error: NG0200: Circular dependency detected for `_DiAuthService`. Source: Dynami
 Angular cannot create either service first. Fix: move the part both need into a third service that both inject, so the arrows only go one way, as `DiOrderService` → `DiLogger` above.
 
 ### Using an interface as a token
+
+<!-- prettier-ignore-start -->
 
 <!-- wrong -->
 
@@ -845,6 +934,8 @@ export class TmpWrong1 {
   private readonly api = inject(DiPaymentApi);
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] TS2693: 'DiPaymentApi' only refers to a type, but is being used as a value here. [plugin angular-compiler]

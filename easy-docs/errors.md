@@ -12,10 +12,11 @@ of it.
 
 - `NG0200`: [NG0200: Circular dependency detected](#ng0200-circular-dependency-detected)
 - `NG0201`: [NG0201: No provider for TemplateRef found](#ng0201-no-provider-for-templateref-found)
-- `NG0201`: [NG0201: No provider found for …](#ng0201-no-provider-found-for-)
+- `NG0201`: [NG0201: No provider found for `...`](#ng0201-no-provider-found-for-)
+- `NG0201`: [NG0201: No provider found for `ActivatedRoute` (a test without the router)](#ng0201-no-provider-found-for-activatedroute-a-test-without-the-router)
 - `NG0203`: [NG0203: effect() can only be used within an injection context](#ng0203-effect-can-only-be-used-within-an-injection-context)
 - `NG0203`: [NG0203: afterNextRender() can only be used within an injection context](#ng0203-afternextrender-can-only-be-used-within-an-injection-context)
-- `NG0203`: [NG0203: The … token injection failed. `inject()` function must be called from an injection context](#ng0203-the--token-injection-failed-inject-function-must-be-called-from-an-injection-context)
+- `NG0203`: [NG0203: The `...` token injection failed. `inject()` function must be called from an injection context](#ng0203-the--token-injection-failed-inject-function-must-be-called-from-an-injection-context)
 - `NG0203`: [NG0203: inject() must be called from an injection context (after await)](#ng0203-inject-must-be-called-from-an-injection-context-after-await)
 - `NG0203`: [NG0203 for `httpResource()`, `toSignal()` or `takeUntilDestroyed()`](#ng0203-for-httpresource-tosignal-or-takeuntildestroyed)
 - `NG0701`: [NG0701: Missing locale data](#ng0701-missing-locale-data)
@@ -54,7 +55,7 @@ of it.
 - `NG8022`: [NG8022: Setting the 'min' attribute is not allowed on nodes using the '[formField]' directive](#ng8022-setting-the-min-attribute-is-not-allowed-on-nodes-using-the-formfield-directive)
 - `NG8109`: [NG8109 / NG8117: a signal is not called in interpolation](#ng8109--ng8117-a-signal-is-not-called-in-interpolation)
 - `NG8117`: [NG8109 / NG8117: a signal is not called in interpolation](#ng8109--ng8117-a-signal-is-not-called-in-interpolation)
-- `NG8118`: [NG8118: … is a required `input` and does not have a value in this context](#ng8118--is-a-required-input-and-does-not-have-a-value-in-this-context)
+- `NG8118`: [NG8118: `...` is a required `input` and does not have a value in this context](#ng8118--is-a-required-input-and-does-not-have-a-value-in-this-context)
 - `TS2307`: [TS2307: Cannot find module '../environment/environment'](#ts2307-cannot-find-module-environmentenvironment)
 - `TS2322`: [TS2322: Type '"..."' is not assignable to type 'never' (in @switch)](#ts2322-type--is-not-assignable-to-type-never-in-switch)
 - `TS2322`: [TS2322: Type 'WritableSignal<string | null>' is not assignable ... ([formField])](#ts2322-type-writablesignal-is-not-assignable--formfield)
@@ -63,6 +64,7 @@ of it.
 - `TS2339`: [TS2339: Property 'valid' does not exist on type 'FieldTree<...>'](#ts2339-property-valid-does-not-exist-on-type-fieldtree)
 - `TS2365`: [TS2540 / TS2365: assigning to a signal field](#ts2540--ts2365-assigning-to-a-signal-field)
 - `TS2420`: [TS2420: Class '...' incorrectly implements interface 'OnInit'](#ts2420-class--incorrectly-implements-interface-oninit)
+- `TS2502`: [TS2502: '…' is referenced directly or indirectly in its own type annotation](#ts2502--is-referenced-directly-or-indirectly-in-its-own-type-annotation)
 - `TS2540`: [TS2540 / TS2365: assigning to a signal field](#ts2540--ts2365-assigning-to-a-signal-field)
 - `TS2693`: [TS2693: '...' only refers to a type, but is being used as a value here](#ts2693--only-refers-to-a-type-but-is-being-used-as-a-value-here)
 - `TS2740`: [TS2740: Type 'HTMLDivElement' is missing the following properties from type 'AccordionPanel'](#ts2740-type-htmldivelement-is-missing-the-following-properties-from-type-accordionpanel)
@@ -453,14 +455,14 @@ From [Inputs, outputs and model](08-inputs-outputs-model.md).
 ✘ [ERROR] NG8008: Required input 'name' from component InputsUserBadge must be specified. [plugin angular-compiler]
 ```
 
-Means: the child declares `input.required()`, and the parent's tag does not set it. Fix: set the input, `<app-user-badge name="Aziza" />`. See [Inputs, outputs and model](08-inputs-outputs-model.md#forgetting-a-required-input).
+Means: the child declares `input.required()`, and the parent's tag does not set it. Fix: set the input, `<app-role-badge name="Aziza" />`. See [Inputs, outputs and model](08-inputs-outputs-model.md#forgetting-a-required-input).
 
 ### NG8002: Can't bind to '...' since it isn't a known property
 
 ```text
-✘ [ERROR] NG8002: Can't bind to 'nme' since it isn't a known property of 'app-user-badge'.
-1. If 'app-user-badge' is an Angular component and it has 'nme' input, then verify that it is included in the '@Component.imports' of this component.
-2. If 'app-user-badge' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@Component.schemas' of this component to suppress this message.
+✘ [ERROR] NG8002: Can't bind to 'nme' since it isn't a known property of 'app-role-badge'.
+1. If 'app-role-badge' is an Angular component and it has 'nme' input, then verify that it is included in the '@Component.imports' of this component.
+2. If 'app-role-badge' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@Component.schemas' of this component to suppress this message.
 3. To allow any property add 'NO_ERRORS_SCHEMA' to the '@Component.schemas' of this component. Find more at https://next.angular.dev/errors/NG8002 [plugin angular-compiler]
 ```
 
@@ -704,6 +706,14 @@ NG0203: The `_RoutingProductStore` token injection failed. `inject()` function m
 ```
 
 Means: a guard, resolver or other function called `inject()` after an `await`. Fix: call every `inject()` at the top of the function, before the first `await`. See [Routing](15-routing.md#calling-inject-after-await).
+
+### NG0201: No provider found for `ActivatedRoute` (a test without the router)
+
+```text
+ɵNotFound: NG0201: No provider found for `ActivatedRoute`. Source: DynamicTestModule. Find more at https://v22.angular.dev/errors/NG0201
+```
+
+Means: a test creates a component that uses `routerLink` or `<router-outlet>`, but the test has no router. Fix: add `providers: [provideRouter(routes)]` to `TestBed.configureTestingModule(...)`. See [Routing](15-routing.md#testing-router-links-without-the-router).
 
 ## Chapter 16. Forms
 
@@ -1006,6 +1016,14 @@ ERROR RuntimeError: NG0701: Missing locale data for the locale "de".
 
 Means: `LOCALE_ID` is set to a locale whose data Angular does not have (only `en-US` is built in), and a pipe such as `currency` needs it. Fix: `registerLocaleData(localeDe)` with `import localeDe from '@angular/common/locales/de'`, or build with `ng build --localize`, which loads the data for you. See [Internationalization (i18n)](24-i18n.md#setting-locale_id-without-locale-data).
 
+### No translation found for "…"
+
+```text
+✘ [ERROR] No translation found for "7049887240439736400" ("Print").
+```
+
+Means: the translation file has no unit for a text that is marked with `i18n` or `$localize`, and the build is set to stop on missing translations. Fix: extract the messages again and add the missing unit (with its `<target>`) to the translation file. See [Internationalization (i18n)](24-i18n.md).
+
 ## Chapter 25. Security
 
 From [Security](25-security.md).
@@ -1047,6 +1065,14 @@ Means: the import path is wrong. The folder that `ng generate environments` crea
 ```
 
 Means: a part of the app is bigger than a limit in the `budgets` of `angular.json` (here one component's CSS, `anyComponentStyle`). The production build fails at the error limit. Fix: make the part smaller (split the component, move shared CSS to `styles.css`, lazy-load, `@defer`), or raise the limit if the size is really needed. See [Build, configure, deploy and update](26-build-configure-deploy-update.md#a-component-style-over-budget).
+
+### TS2502: '…' is referenced directly or indirectly in its own type annotation
+
+```text
+✘ [ERROR] TS2502: 'environment' is referenced directly or indirectly in its own type annotation. [plugin angular-compiler]
+```
+
+Means: a file uses `typeof` on a value that, after the build replaces files, is the file itself. Fix: describe the shape in a separate `interface` file and use that type in every environment file. See [Build, configure, deploy and update](26-build-configure-deploy-update.md).
 
 ## Chapter 27. Smaller topics
 

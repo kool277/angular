@@ -4,9 +4,9 @@ import {Component, effect, signal, untracked} from '@angular/core';
   selector: 'app-theme-saver',
   template: `
     <p>Hello, {{ userName() }}. Theme: {{ theme() }}</p>
-    <button (click)="theme.set('dark')">Dark</button>
-    <button (click)="theme.set('light')">Light</button>
-    <button (click)="userName.set('Guest')">Log out</button>
+    <button type="button" (click)="theme.set('dark')">Dark</button>
+    <button type="button" (click)="theme.set('light')">Light</button>
+    <button type="button" (click)="userName.set('Guest')">Log out</button>
   `,
 })
 export class SignalsThemeSaver {

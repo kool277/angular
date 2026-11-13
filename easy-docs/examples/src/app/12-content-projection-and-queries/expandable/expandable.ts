@@ -1,9 +1,9 @@
+// #docregion expandable
 import {Component, Directive, computed, contentChild, signal} from '@angular/core';
 
 @Directive({selector: '[appMore]'})
 export class ProjMore {}
 
-// #docregion expandable
 @Component({
   selector: 'app-proj-expandable',
   template: `
@@ -25,11 +25,11 @@ export class ProjExpandable {
 }
 // #enddocregion expandable
 
+// #docregion usage
 @Component({
   selector: 'app-proj-expandable-demo',
   imports: [ProjExpandable, ProjMore],
   template: `
-    <!-- #docregion usage -->
     <app-proj-expandable>
       <p>Samarkand is one of the oldest cities in Central Asia.</p>
       <p appMore>Its Registan square has three madrasahs.</p>
@@ -38,7 +38,7 @@ export class ProjExpandable {
     <app-proj-expandable>
       <p>Short news: the museum opens at 9.</p>
     </app-proj-expandable>
-    <!-- #enddocregion usage -->
   `,
 })
 export class ProjExpandableDemo {}
+// #enddocregion usage

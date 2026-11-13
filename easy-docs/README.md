@@ -74,17 +74,20 @@ Every chapter has the same ten parts:
 9. **Remember**: the most important points.
 10. **Read more**: links to the official documentation.
 
-Above each code block, a hidden comment names the file in [`examples/`](examples/) that the code
-comes from. You see it when you open the chapter's source. Code marked as wrong in part 7 has no
-file, because it does not work.
+Every piece of correct code in the guide is part of a small app in the [`examples/`](examples/)
+folder next to this page, and that app's tests prove that the code works. If you open a chapter's
+`.md` file in a text editor, you see a line like `<!-- example: src/app/07-signals/counter/counter.ts -->`
+above each code block: it names the file in `examples/` that the code comes from. Code marked as
+wrong in part 7 has no file, because it does not work.
 
 ## Run the examples
 
-The examples are a normal Angular app, made with the Angular CLI 22.2. You need Node.js (a version
-from [chapter 2](02-install-and-first-app.md)) and npm.
+The examples are a normal Angular app, made with the Angular CLI 22.2, in the `examples/` folder
+next to this page. You need Node.js (a version from [chapter 2](02-install-and-first-app.md)) and
+npm. In a terminal, go to the folder of this page, then:
 
 ```shell
-cd easy-docs/examples
+cd examples
 npm install
 npx ng test --watch=false     # runs the tests of every example
 npx ng serve                  # opens the demo app on http://localhost:4200
@@ -100,13 +103,15 @@ Each chapter's examples are in `src/app/<chapter>/`, for example `src/app/07-sig
 app has a page that links to the demos of every chapter (routing has no demo page: its examples
 set up their own routes, so run its tests instead).
 
-The workspace sets `"isolate": true` for `ng test` in `angular.json`. Some tests change global
-things, such as fake timers or the window size; isolation runs each test file on its own, so one
-file cannot disturb another.
+(You can skip this until [chapter 19](19-testing.md).) The examples set `"isolate": true` for
+`ng test` in their `angular.json`. Some tests change things that all tests share, such as the clock
+or the window size. With this setting each test file runs on its own, so one file cannot disturb
+another.
 
-## How the guide is checked
+## For the authors of this guide
 
-From the root of this repository:
+This section is for people who change the guide, not for readers. The guide lives in the
+`easy-docs/` folder of a fork of the Angular repository. From the root of that repository:
 
 ```shell
 node fork-tools/check-docs.mjs
@@ -114,4 +119,5 @@ node fork-tools/check-docs.mjs
 
 It fails when a code block differs from its example file, when a relative link is broken, or when a
 chapter lacks one of the ten parts. The tests in `examples/` prove what the chapters say. They pass
-on stock Angular 22.2.6 and on this fork's build (see [FORK.md](../FORK.md)).
+on stock Angular 22.2.6 and on the fork's own build of Angular (see `FORK.md` in the root of the
+repository).

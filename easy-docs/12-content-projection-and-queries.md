@@ -206,11 +206,25 @@ export class ProjSearchBox {
 - `.required` says: "this element is always there". The signal type then has no `undefined`. Without `.required`, `viewChild` returns `undefined` when nothing matches, for example while an `@if` hides the element.
 - Use `nativeElement` only for things a binding cannot do, such as `focus()`.
 
-`viewChildren` finds **all** results, as an array. With a component class as locator, you get the component objects and can read their signals:
+`viewChildren` finds **all** results, as an array. With a component class as locator, you get the component objects and can read their signals. In this poll, `ProjVote` is a small child component: it shows a dish name and counts votes in its own `votes` signal. `ProjPoll` shows one `ProjVote` per dish:
 
-<!-- example: src/app/12-content-projection-and-queries/votes/votes.ts#poll -->
+<!-- example: src/app/12-content-projection-and-queries/votes/votes.ts -->
 
 ```ts
+import {Component, computed, input, signal, viewChildren} from '@angular/core';
+
+@Component({
+  selector: 'app-proj-vote',
+  template: `
+    {{ name() }}: {{ votes() }}
+    <button type="button" (click)="votes.set(votes() + 1)">+1</button>
+  `,
+})
+export class ProjVote {
+  readonly name = input.required<string>();
+  readonly votes = signal(0);
+}
+
 @Component({
   selector: 'app-proj-poll',
   imports: [ProjVote],
@@ -244,6 +258,11 @@ Queries never look inside other components. `viewChildren` sees the `<app-proj-v
 <!-- example: src/app/12-content-projection-and-queries/expandable/expandable.ts#expandable -->
 
 ```ts
+import {Component, Directive, computed, contentChild, signal} from '@angular/core';
+
+@Directive({selector: '[appMore]'})
+export class ProjMore {}
+
 @Component({
   selector: 'app-proj-expandable',
   template: `
@@ -267,18 +286,26 @@ export class ProjExpandable {
 
 <!-- example: src/app/12-content-projection-and-queries/expandable/expandable.ts#usage -->
 
-```html
-<app-proj-expandable>
-  <p>Samarkand is one of the oldest cities in Central Asia.</p>
-  <p appMore>Its Registan square has three madrasahs.</p>
-</app-proj-expandable>
+```ts
+@Component({
+  selector: 'app-proj-expandable-demo',
+  imports: [ProjExpandable, ProjMore],
+  template: `
+    <app-proj-expandable>
+      <p>Samarkand is one of the oldest cities in Central Asia.</p>
+      <p appMore>Its Registan square has three madrasahs.</p>
+    </app-proj-expandable>
 
-<app-proj-expandable>
-  <p>Short news: the museum opens at 9.</p>
-</app-proj-expandable>
+    <app-proj-expandable>
+      <p>Short news: the museum opens at 9.</p>
+    </app-proj-expandable>
+  `,
+})
+export class ProjExpandableDemo {}
 ```
 
-- `ProjMore` is an empty directive with the selector `[appMore]`. It only marks an element, so the query can find it.
+- `ProjMore` is an empty directive with the selector `[appMore]` (at the top of the file). It only marks an element, so the query can find it.
+- The demo component imports **both** `ProjExpandable` and `ProjMore`. Without `ProjMore` in `imports`, there is no error, but `appMore` stays a plain attribute, the query finds nothing and the "Read more" button never appears.
 - `contentChild(ProjMore)` is `undefined` when the parent gives no `appMore` part. The second box therefore has no "Read more" button.
 - The extra part is projected into a `<div>` with `[hidden]`. A click on the button shows it.
 
@@ -415,7 +442,31 @@ import {ProjRecipeStep} from './recipe-step';
 export class ProjRecipeTabs {}
 ```
 
-`ProjRecipeStep` is a small component that counts how many times it was created, so the test can prove that the "Steps" content is created only after a click:
+`ProjRecipeStep` is a small component that shows its text in a `<p>` and counts how many times it was created:
+
+<!-- example: src/app/12-content-projection-and-queries/tabs/recipe-step.ts -->
+
+```ts
+import {Component, input} from '@angular/core';
+
+@Component({
+  selector: 'app-proj-recipe-step',
+  template: `<p>{{ text() }}</p>`,
+})
+export class ProjRecipeStep {
+  static created = 0;
+  readonly text = input.required<string>();
+
+  constructor() {
+    ProjRecipeStep.created++;
+  }
+}
+```
+
+- `static created = 0` is a **static** field: it belongs to the class itself, not to one object. All `ProjRecipeStep` objects share it, and you read it as `ProjRecipeStep.created`.
+- The constructor runs once for every new object, so `created` grows by one each time Angular creates the component.
+
+The test can now prove that the "Steps" content is created only after a click:
 
 <!-- example: src/app/12-content-projection-and-queries/tabs/recipe-tabs.spec.ts -->
 
@@ -455,6 +506,8 @@ describe('ProjTabs', () => {
 
 ### Using an unknown element as a slot name
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
@@ -462,6 +515,8 @@ describe('ProjTabs', () => {
   <panel-title>Today's order</panel-title>
 </app-proj-panel>
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] NG8001: 'panel-title' is not a known element:
@@ -489,6 +544,8 @@ describe('ProjTabs', () => {
 
 ### Binding the attribute that a slot looks for
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
@@ -497,23 +554,31 @@ describe('ProjTabs', () => {
 </app-proj-panel>
 ```
 
+<!-- prettier-ignore-end -->
+
 No error. But the title appears in the **body**, not in the header. `select` only sees attributes and classes that are written as fixed text. Fix: write the attribute without a binding, `<h3 panel-title>`, as in the example above.
 
 ### Hiding `<ng-content>` with `@if`
+
+<!-- prettier-ignore-start -->
 
 <!-- wrong -->
 
 ```ts
 @Component({
   selector: 'app-tmp-hidden',
-  template: `@if (open()) {
-    <ng-content />
-  }`,
+  template: `
+    @if (open()) {
+      <ng-content />
+    }
+  `,
 })
 class TmpHidden {
-  open = signal(false);
+  readonly open = signal(false);
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 No error, and the content does not appear. But Angular still **creates** it: components in the content are created and run their code, even though nobody sees them. A test of this showed that a `ProjRecipeStep` inside was created once while `open()` was `false`. Fix: to show content only sometimes, hide a wrapper with `[hidden]` (as `ProjExpandable` does), or let the parent pass an `<ng-template>` and render it when needed (as `ProjTabs` does):
 
@@ -550,6 +615,8 @@ export class ProjTabs {
 
 ### A required query for an element inside `@if`
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -570,6 +637,8 @@ class TmpWrong2 {
   }
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 The build works. When the user clicks while the input is hidden, the console shows:
 

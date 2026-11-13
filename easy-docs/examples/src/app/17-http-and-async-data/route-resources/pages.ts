@@ -1,7 +1,7 @@
+// #docregion blocking-page
 import {Component, Resource, input} from '@angular/core';
 import {Tea} from '../tea';
 
-// #docregion blocking-page
 @Component({
   template: `<h2>{{ tea().name }}</h2>
     <p>{{ tea().price }} €</p>`,

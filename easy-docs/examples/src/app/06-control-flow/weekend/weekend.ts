@@ -4,7 +4,6 @@ import {Component} from '@angular/core';
   selector: 'app-weekend',
   template: `
     <p>Today is {{ day }}.</p>
-    <!-- #docregion switch -->
     @switch (day) {
       @case ('Saturday')
       @case ('Sunday') {
@@ -14,9 +13,8 @@ import {Component} from '@angular/core';
         <p class="kind">A work day.</p>
       }
     }
-    <!-- #enddocregion switch -->
-    <button (click)="day = 'Sunday'">Sunday</button>
-    <button (click)="day = 'Monday'">Monday</button>
+    <button type="button" (click)="day = 'Sunday'">Sunday</button>
+    <button type="button" (click)="day = 'Monday'">Monday</button>
   `,
 })
 export class ControlFlowWeekend {

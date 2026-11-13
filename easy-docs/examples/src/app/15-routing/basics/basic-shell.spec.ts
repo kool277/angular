@@ -1,3 +1,4 @@
+// #docregion setup
 import {TestBed} from '@angular/core/testing';
 import {Title} from '@angular/platform-browser';
 import {Router} from '@angular/router';
@@ -8,6 +9,7 @@ describe('RoutingBasicShell', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({providers: basicConfig.providers});
   });
+  // #enddocregion setup
 
   // #docregion click-link
   it('shows the page of the link you click', async () => {

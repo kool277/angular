@@ -112,6 +112,18 @@ describe('PerfArticle', () => {
 });
 ```
 
+You can see the separate chunk when you build the app. Put `<app-perf-article />` into your `app.html` (and `PerfArticle` into the `imports` of `app.ts`), then run `ng build`. Next to the **initial** chunks (loaded at the start), the output now lists **lazy** chunks (loaded later). The file names contain random letters, and the sizes differ in your app:
+
+```text
+Initial chunk files   | Names         |  Raw size | Estimated transfer size
+main-D6H327DV.js      | main          |  97.59 kB |                25.09 kB
+...
+Lazy chunk files      | Names         |  Raw size | Estimated transfer size
+chunk-NG5MBVT7.js     | comments      | 427 bytes |               427 bytes
+```
+
+The chunk named `comments` holds `PerfComments` (from the file `comments.ts`). If a component that you deferred does not appear in the `Lazy chunk files` table, it was not deferred (see part 7).
+
 A `@defer` block is also called a **deferrable view**: a part of the template whose code is loaded later ("deferred").
 
 ## 5. How it works
@@ -143,21 +155,36 @@ The placeholder, loading and error blocks are not deferred: their components are
 
 ### The sub-blocks and their timing options
 
-<!-- prettier-ignore-start -->
-<!-- example: src/app/20-performance-defer-and-zoneless/states/profile-card.ts#blocks -->
+A profile card shows the details of a user only when the browser is idle. The file holds two components: `PerfProfileDetails` (the deferred one) and `PerfProfileCard` with the `@defer` block:
 
-```html
-@defer (on idle) {
-  <app-perf-profile-details />
-} @placeholder (minimum 500ms) {
-  <p>Profile</p>
-} @loading (after 100ms; minimum 1s) {
-  <p>Loading the profile…</p>
-} @error {
-  <p>The profile could not be loaded.</p>
-}
+<!-- example: src/app/20-performance-defer-and-zoneless/states/profile-card.ts -->
+
+```ts
+import {Component} from '@angular/core';
+
+@Component({
+  selector: 'app-perf-profile-details',
+  template: `<p>Aziz has written 12 recipes.</p>`,
+})
+export class PerfProfileDetails {}
+
+@Component({
+  selector: 'app-perf-profile-card',
+  imports: [PerfProfileDetails],
+  template: `
+    @defer (on idle) {
+      <app-perf-profile-details />
+    } @placeholder (minimum 500ms) {
+      <p>Profile</p>
+    } @loading (after 100ms; minimum 1s) {
+      <p>Loading the profile…</p>
+    } @error {
+      <p>The profile could not be loaded.</p>
+    }
+  `,
+})
+export class PerfProfileCard {}
 ```
-<!-- prettier-ignore-end -->
 
 - `@placeholder (minimum 500ms)`: once the placeholder is shown, keep it for at least 500 ms. This avoids a fast flicker.
 - `@loading (after 100ms; minimum 1s)`: show the loading block only if loading takes longer than 100 ms; once it is shown, keep it for at least 1 second.
@@ -168,15 +195,31 @@ The placeholder, loading and error blocks are not deferred: their components are
 
 A **trigger** says when the deferred content is loaded and shown. Write it after `on`, or write a condition after `when`. You can list several triggers, separated by `;`. The first one that fires wins.
 
-| Trigger          | Fires when                                                                                                            |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `on idle`        | The browser has nothing else to do (it uses `requestIdleCallback`). This is the **default** if you write none.        |
-| `on viewport`    | The placeholder (or another element) becomes visible on the screen. The **viewport** is the visible part of the page. |
-| `on interaction` | The user clicks the placeholder (or another element) or presses a key in it.                                          |
-| `on hover`       | The mouse moves over the placeholder (or another element), or it gets the keyboard focus.                             |
-| `on immediate`   | Right after the rest of the page has been rendered.                                                                   |
-| `on timer(2s)`   | After the given time.                                                                                                 |
-| `when condition` | The expression becomes truthy, for example a signal that turns `true`.                                                |
+| Trigger          | Fires when                                                                                                                                                                     |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `on idle`        | The browser has nothing else to do (it uses `requestIdleCallback`, a browser function that runs code when the browser is not busy). This is the **default** if you write none. |
+| `on viewport`    | The placeholder (or another element) becomes visible on the screen. The **viewport** is the visible part of the page.                                                          |
+| `on interaction` | The user clicks the placeholder (or another element) or presses a key in it.                                                                                                   |
+| `on hover`       | The mouse moves over the placeholder (or another element), or it gets the keyboard focus.                                                                                      |
+| `on immediate`   | Right after the rest of the page has been rendered.                                                                                                                            |
+| `on timer(2s)`   | After the given time.                                                                                                                                                          |
+| `when condition` | The expression becomes truthy, for example a signal that turns `true`.                                                                                                         |
+
+The examples below all live in one component, `PerfTriggers`. Each block loads this small component, so the test can see which blocks have loaded:
+
+<!-- example: src/app/20-performance-defer-and-zoneless/triggers/loaded-box.ts -->
+
+```ts
+import {Component, input} from '@angular/core';
+
+@Component({
+  selector: 'app-perf-loaded-box',
+  template: `<p>Loaded: {{ name() }}</p>`,
+})
+export class PerfLoadedBox {
+  readonly name = input.required<string>();
+}
+```
 
 `on idle`, with nothing else:
 
@@ -244,7 +287,27 @@ A condition. Here the block loads when the signal `showMap` becomes `true`:
 ```
 <!-- prettier-ignore-end -->
 
-The test of `PerfTriggers` (`src/app/20-performance-defer-and-zoneless/triggers/triggers.spec.ts`) fires the triggers one after another and checks that each block loads only after its own trigger. jsdom, the fake browser of the tests, has no `IntersectionObserver` (the browser API behind `on viewport`), so the test puts in a fake one that never fires.
+The test of `PerfTriggers` ([`src/app/20-performance-defer-and-zoneless/triggers/triggers.spec.ts`](examples/src/app/20-performance-defer-and-zoneless/triggers/triggers.spec.ts)) fires the triggers one after another and checks that each block loads only after its own trigger. `on viewport` uses `IntersectionObserver`, a browser feature that tells code when an element becomes visible on the screen. jsdom, the fake browser of the tests, does not have it. So the test writes a fake class whose methods do nothing, so it never fires:
+
+<!-- example: src/app/20-performance-defer-and-zoneless/triggers/triggers.spec.ts#fake -->
+
+```ts
+/** jsdom has no IntersectionObserver, which `on viewport` needs. This one never fires. */
+class FakeIntersectionObserver {
+  observe(): void {}
+  unobserve(): void {}
+  disconnect(): void {}
+}
+```
+
+and puts it in the place of the real one for each test. `vi.stubGlobal(name, value)` replaces a global name (a name that all code can see, such as `IntersectionObserver`), and `vi.unstubAllGlobals()` puts the real ones back:
+
+<!-- example: src/app/20-performance-defer-and-zoneless/triggers/triggers.spec.ts#stub -->
+
+```ts
+beforeEach(() => vi.stubGlobal('IntersectionObserver', FakeIntersectionObserver));
+afterEach(() => vi.unstubAllGlobals());
+```
 
 The `on viewport` trigger can also take options for `IntersectionObserver`, such as `on viewport({ trigger: box, rootMargin: '100px' })`. See the adev page for details.
 
@@ -400,7 +463,7 @@ Signals and `OnPush` fit together: a signal tells Angular exactly which componen
 
 You may still meet zone.js in older apps:
 
-- They load `zone.js` in the `polyfills` list of `angular.json`.
+- They load `zone.js` in the `polyfills` list of `angular.json`. **Polyfills** are scripts that the build loads before your app, to add features that the browser or the app needs.
 - Their app config contains `provideZoneChangeDetection()`, which turns zone-based change detection back on. Remove it, and remove `zone.js` from `polyfills` and with `npm uninstall zone.js`, to make such an app zoneless.
 - Code that waits for `NgZone.onStable` or `NgZone.onMicrotaskEmpty` must use `afterNextRender` ([chapter 13](13-lifecycle.md)) instead, because these never fire without zone.js.
 
@@ -436,13 +499,13 @@ You may still meet zone.js in older apps:
 | (no `priority`)             | The directive adds `loading="lazy"`: the browser loads the image only when it comes near the visible part of the page.                                                                                                   |
 | `fill`                      | The image fills its parent element, like a background picture. No `width` and `height`. The parent needs `position: relative` (or `fixed` or `absolute`). `object-fit: cover` crops the image instead of stretching it.  |
 
-The test (`src/app/20-performance-defer-and-zoneless/images/photos.spec.ts`) checks exactly these attributes.
+The test ([`src/app/20-performance-defer-and-zoneless/images/photos.spec.ts`](examples/src/app/20-performance-defer-and-zoneless/images/photos.spec.ts)) checks exactly these attributes.
 
 More features, all described on the adev page:
 
 - An **image loader** is a function that builds the image URL for an image server (a **CDN**, a network of servers that deliver files fast). With a loader, the directive also writes a **`srcset`**: a list of image sizes from which the browser picks the best one for the screen. Angular has ready-made loaders, such as `provideImgixLoader(...)` and `provideImageKitLoader(...)`, or you write your own (see part 6).
 - `sizes="50vw"` tells the browser how wide a responsive image is shown, so it picks a smaller file.
-- `placeholder` shows a small blurred version while the image loads. It needs a loader, or a small `data:` URL.
+- `placeholder` shows a small blurred version while the image loads. It needs a loader, or a small `data:` URL (an image written as text directly in the attribute, such as `placeholder="data:image/png;base64,iVBORw..."`).
 
 ### The performance overview page
 
@@ -526,6 +589,57 @@ export class PerfProductPage {}
 ```
 <!-- prettier-ignore-end -->
 
+The size guide and the reviews are two small components:
+
+<!-- example: src/app/20-performance-defer-and-zoneless/product-page/size-guide.ts -->
+
+```ts
+import {Component} from '@angular/core';
+
+@Component({
+  selector: 'app-perf-size-guide',
+  template: `
+    <table>
+      <thead>
+        <tr>
+          <th>EU</th>
+          <th>US</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>42</td>
+          <td>9</td>
+        </tr>
+        <tr>
+          <td>43</td>
+          <td>10</td>
+        </tr>
+      </tbody>
+    </table>
+  `,
+})
+export class PerfSizeGuide {}
+```
+
+<!-- example: src/app/20-performance-defer-and-zoneless/product-page/reviews.ts -->
+
+```ts
+import {Component} from '@angular/core';
+
+@Component({
+  selector: 'app-perf-reviews',
+  template: `
+    <h3>Reviews</h3>
+    <ul>
+      <li>★★★★★ Very comfortable.</li>
+      <li>★★★★☆ Good, but a bit heavy.</li>
+    </ul>
+  `,
+})
+export class PerfReviews {}
+```
+
 The tests check the image (with its `srcset` of two sizes, `1x` for normal screens and `2x` for sharp screens) and step through the states of the reviews block:
 
 <!-- example: src/app/20-performance-defer-and-zoneless/product-page/product-page.spec.ts -->
@@ -597,16 +711,20 @@ What the user gets: the photo and the price appear fast, because the first chunk
 
 ### A placeholder with two root elements
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 @defer (on viewport) {
-<app-perf-loaded-box name="reviews" />
+  <app-perf-loaded-box name="reviews" />
 } @placeholder {
-<h3>Reviews</h3>
-<p>Scroll down to load the reviews.</p>
+  <h3>Reviews</h3>
+  <p>Scroll down to load the reviews.</p>
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] NG8020: Trigger with no target can only be placed on an @defer that has a @placeholder block with exactly one root element node [plugin angular-compiler]
@@ -628,14 +746,18 @@ What the user gets: the photo and the price appear fast, because the first chunk
 
 ### A trigger that names a reference that does not exist
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 <button type="button" #helpButton>Help</button>
 @defer (on hover(help)) {
-<app-perf-loaded-box name="hover" />
+  <app-perf-loaded-box name="hover" />
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] NG8010: Trigger cannot find reference "help".
@@ -658,26 +780,34 @@ Fix: use the exact name of the template reference variable:
 
 ### Using the deferred component outside `@defer` too
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 <app-perf-reviews />
 @defer (on viewport) {
-<app-perf-reviews />
+  <app-perf-reviews />
 } @placeholder {
-<p>Reviews</p>
+  <p>Reviews</p>
 }
 ```
 
-No error. But because `PerfReviews` is also used outside the block, the build puts it into the first chunk, and nothing is deferred. Fix: use the component only inside `@defer` in that file, as in `PerfProductPage`. Also import it from its own file, not through an `index.ts` file that exports many components.
+<!-- prettier-ignore-end -->
+
+No error. But because `PerfReviews` is also used outside the block, the build puts it into the first chunk, and nothing is deferred. Fix: use the component only inside `@defer` in that file, as in `PerfProductPage`. Also import it from its own file. Some projects have an `index.ts` file that collects the exports of many files, with lines such as `export * from './reviews';`. If you import `PerfReviews` through such a file, the build may put the code of all those components together, so it cannot split them.
 
 ### `ngSrc` without `width` and `height`
+
+<!-- prettier-ignore-start -->
 
 <!-- wrong -->
 
 ```html
 <img ngSrc="/photos/lake.jpg" alt="A lake" />
 ```
+
+<!-- prettier-ignore-end -->
 
 The browser console shows:
 

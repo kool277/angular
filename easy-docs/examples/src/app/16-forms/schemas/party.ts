@@ -1,3 +1,4 @@
+// #docregion address-schema
 import {Component, signal} from '@angular/core';
 import {
   apply,
@@ -9,7 +10,6 @@ import {
   schema,
 } from '@angular/forms/signals';
 
-// #docregion address-schema
 export interface Address {
   street: string;
   city: string;
@@ -19,11 +19,11 @@ export const addressSchema = schema<Address>((path) => {
   required(path.street, {message: 'Enter the street.'});
   required(path.city, {message: 'Enter the city.'});
 });
-// #enddocregion address-schema
 
 interface Guest {
   name: string;
 }
+// #enddocregion address-schema
 
 @Component({
   selector: 'app-forms-party',
@@ -55,12 +55,14 @@ interface Guest {
   `,
 })
 export class FormsParty {
+  // #docregion model
   readonly partyModel = signal({
     billing: {street: '', city: ''} as Address,
     sameAddress: true,
     delivery: {street: '', city: ''} as Address,
     guests: [{name: ''}] as Guest[],
   });
+  // #enddocregion model
 
   // #docregion form
   readonly partyForm = form(this.partyModel, (path) => {
@@ -77,6 +79,7 @@ export class FormsParty {
     this.partyModel.update((m) => ({...m, guests: [...m.guests, {name: ''}]}));
   }
 
+  // `_` is the name for a parameter that the function does not use (here: the guest).
   removeGuest(index: number) {
     this.partyModel.update((m) => ({...m, guests: m.guests.filter((_, i) => i !== index)}));
   }

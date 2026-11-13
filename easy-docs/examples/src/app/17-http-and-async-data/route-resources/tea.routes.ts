@@ -4,7 +4,6 @@ import {Tea} from '../tea';
 import {HttpRouteMenuPage, HttpRouteTeaPage} from './pages';
 
 export const teaResourceRoutes: Routes = [
-  // #docregion routes
   {
     path: 'teas/:id',
     component: HttpRouteTeaPage,
@@ -19,5 +18,4 @@ export const teaResourceRoutes: Routes = [
       teas: nonBlocking(httpResource<Tea[]>(() => '/http-demo/teas.json')),
     }),
   },
-  // #enddocregion routes
 ];

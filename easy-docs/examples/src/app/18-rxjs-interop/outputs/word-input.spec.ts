@@ -3,6 +3,7 @@ import {outputToObservable} from '@angular/core/rxjs-interop';
 import {RxWordDemo, RxWordInput} from './word-input';
 
 describe('outputFromObservable and outputToObservable', () => {
+  // #docregion helper
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
@@ -11,6 +12,7 @@ describe('outputFromObservable and outputToObservable', () => {
     input.dispatchEvent(new Event('input'));
     await vi.advanceTimersByTimeAsync(50);
   }
+  // #enddocregion helper
 
   it('the parent gets the text once typing stops', async () => {
     const fixture = TestBed.createComponent(RxWordDemo);

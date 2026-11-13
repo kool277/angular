@@ -1,3 +1,4 @@
+// #docregion list
 import {Component, DestroyRef, inject, signal} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {RxNotifications} from './notifications';
@@ -24,7 +25,9 @@ export class RxNotificationList {
   }
   // #enddocregion constructor
 }
+// #enddocregion list
 
+// #docregion late
 @Component({
   selector: 'app-rx-late-listener',
   template: `
@@ -47,3 +50,4 @@ export class RxLateListener {
   }
   // #enddocregion method
 }
+// #enddocregion late

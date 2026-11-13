@@ -103,7 +103,7 @@ describe('SecCommentPreview', () => {
 });
 ```
 
-`vi.spyOn(console, 'warn')` replaces `console.warn` with a fake that records its calls ([Testing](19-testing.md)), so the test can check the warning texts and the test output stays clean. In a production build, Angular still sanitizes but prints no warning.
+`vi.spyOn(console, 'warn')` watches `console.warn` and records its calls ([Testing](19-testing.md#fakes-and-spies)). `.mockImplementation(() => {})` makes the spy run an empty function instead of the real `console.warn`, so no warning is printed and the test output stays clean. The test can still check the warning texts. `afterEach(() => vi.restoreAllMocks())` puts the real `console.warn` back after each test. In a production build, Angular still sanitizes but prints no warning.
 
 ## 5. How it works
 
@@ -166,7 +166,24 @@ You give Angular the nonce in one of two ways:
 1. In `index.html`, on the root element: `<app-root ngCspNonce="randomNonceGoesHere"></app-root>`. Your server writes the value into the page for each request.
 2. With the token `CSP_NONCE`: `{ provide: CSP_NONCE, useValue: theNonce }` in the app's providers.
 
-Angular then puts the nonce on every `<style>` element it adds:
+Angular then puts the nonce on every `<style>` element it adds. The test uses a small component with a style:
+
+<!-- example: src/app/25-security/csp-nonce/csp-nonce.ts -->
+
+```ts
+import {Component} from '@angular/core';
+
+@Component({
+  selector: 'app-csp-badge',
+  template: `<span class="badge">Secure</span>`,
+  styles: `
+    .badge {
+      color: darkgreen;
+    }
+  `,
+})
+export class SecCspBadge {}
+```
 
 <!-- example: src/app/25-security/csp-nonce/csp-nonce.spec.ts -->
 
@@ -205,6 +222,8 @@ In browsers without Trusted Types, the app still works, and Angular's sanitizer 
 
 ### Attacks through HTTP
 
+First a word you need here: a **cookie** is a small piece of text that a site stores in the browser. The browser sends it back with every request to that site. Sites often keep the "you are logged in" information in a cookie.
+
 **Cross-site request forgery** (**CSRF** or **XSRF**): the user is logged in to your site. They open an evil page in another tab. That page sends a request to your server, and the browser adds your site's cookies automatically. Without protection, the server cannot tell this forged request from a real one.
 
 The common defence works in two halves:
@@ -213,6 +232,33 @@ The common defence works in two halves:
 2. **`HttpClient`** reads that cookie and copies its value into the header `X-XSRF-TOKEN` of each `POST`, `PUT`, `PATCH` and `DELETE` request to your own site. `GET` and `HEAD` requests do not get it, and neither do requests to other sites.
 
 Only pages from your own site can read your cookie, so an evil page cannot set the right header. `HttpClient` does its half automatically; your server must do the other half, or the protection does nothing.
+
+The test uses this small service, which sends and loads reviews with `HttpClient` ([chapter 17](17-http-and-async-data.md)):
+
+<!-- example: src/app/25-security/xsrf/review-api.ts -->
+
+```ts
+import {HttpClient} from '@angular/common/http';
+import {inject, Service} from '@angular/core';
+
+export interface Review {
+  stars: number;
+  text: string;
+}
+
+@Service()
+export class SecReviewApi {
+  private http = inject(HttpClient);
+
+  list() {
+    return this.http.get<Review[]>('/api/reviews');
+  }
+
+  send(review: Review) {
+    return this.http.post<void>('/api/reviews', review);
+  }
+}
+```
 
 <!-- example: src/app/25-security/xsrf/review-api.spec.ts -->
 
@@ -277,7 +323,7 @@ export const customXsrfConfig: ApplicationConfig = {
 
 **Cross-site script inclusion** (**XSSI**): an old attack where another site loads your JSON API as if it were a script. Servers defend by starting JSON answers with `)]}',` and a new line, which makes them invalid JavaScript. `HttpClient` removes this prefix automatically before it parses the JSON.
 
-For server rendering ([Server rendering and hydration](21-server-rendering-and-hydration.md)), Angular also checks the `Host` and `X-Forwarded-*` headers of incoming requests against an allow list (`security.allowedHosts` in `angular.json`) to prevent **server-side request forgery**. The adev page describes the settings.
+One more attack concerns server rendering ([Server rendering and hydration](21-server-rendering-and-hydration.md)). There, Angular answers only requests for the host names (such as `museum.example`) that you list in `security.allowedHosts` in `angular.json`. This stops **server-side request forgery** (**SSRF**): tricks that make your server send requests to places it should not. The adev page describes the settings.
 
 ## 6. A realistic example
 
@@ -322,7 +368,7 @@ export class SecTrustedVideo {
 
 Why this is safe:
 
-- The regular expression `VIDEO_ID` accepts **only** 11 letters, digits, `-` or `_`. Anything else (slashes, dots, `:`, spaces) is rejected, so the ID cannot change the host or the path.
+- `VIDEO_ID` is a **regular expression**: a pattern for text. `^` and `$` mean "the whole text from start to end", `[A-Za-z0-9_-]` is one allowed character, and `{11}` means exactly 11 of them. So it accepts **only** 11 letters, digits, `-` or `_`. Anything else (slashes, dots, `:`, spaces) is rejected, so the ID cannot change the host or the path.
 - The host and path `https://www.youtube-nocookie.com/embed/` are written in the code; no outside value can change them.
 - Only after these checks does the code call `bypassSecurityTrustResourceUrl`. A wrong ID shows a message instead of an `<iframe>`.
 - `computed` makes a new trusted URL only when the ID changes ([Signals](07-signals.md)), so the `<iframe>` does not reload on every check.
@@ -368,6 +414,8 @@ describe('SecTrustedVideo', () => {
 
 ### Binding a plain string to an `<iframe>`
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -378,6 +426,8 @@ export class Video {
   url = 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ';
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ERROR RuntimeError: NG0904: unsafe value used in a resource URL context (see https://angular.dev/best-practices/security#preventing-cross-site-scripting-xss). Find more at https://v22.angular.dev/errors/NG0904
@@ -402,21 +452,29 @@ videoUrl = computed<SafeResourceUrl | null>(() => {
 
 ### Trusting user input to make an error go away
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
 comment = this.sanitizer.bypassSecurityTrustHtml(this.visitorComment());
 ```
 
+<!-- prettier-ignore-end -->
+
 There is no error, and that is the problem: the comment is shown without sanitizing, and a `<script>` or `onerror` in it would run. If you only need HTML from users, bind it with `[innerHTML]` and let Angular clean it (as in `SecCommentPreview`). Trust only values you built from checked parts.
 
 ### Writing user HTML straight into the DOM
+
+<!-- prettier-ignore-start -->
 
 <!-- wrong -->
 
 ```ts
 this.host.nativeElement.innerHTML = this.visitorComment();
 ```
+
+<!-- prettier-ignore-end -->
 
 There is no error and no warning. Angular never sees this value, so it cannot clean it. Use a template binding, or clean the value first with `DomSanitizer.sanitize(SecurityContext.HTML, value)`, as in the exercise.
 
@@ -426,7 +484,7 @@ There is no error and no warning. Angular never sees this value, so it cannot cl
 
 ## 8. Try it yourself
 
-A help text arrives from a content system as HTML. A third-party tooltip library needs it as a string, so you cannot use a template binding. Write a service `SecHtmlCleaner` with a method `clean(html: string): string` that removes everything dangerous but keeps harmless tags. Test it with a `<script>` and with an `<img onerror="...">`.
+Some help text comes from a server as HTML. Another library (not Angular) shows it in a tooltip and needs it as a string, so you cannot use a template binding. Write a service `SecHtmlCleaner` with a method `clean(html: string): string` that removes everything dangerous but keeps harmless tags. Test it with a `<script>` and with an `<img onerror="...">`.
 
 <details><summary>Solution</summary>
 

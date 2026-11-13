@@ -33,8 +33,8 @@ import {Component, signal} from '@angular/core';
   selector: 'app-signals-counter',
   template: `
     <p>Count: {{ count() }}</p>
-    <button (click)="increment()">+1</button>
-    <button (click)="reset()">Reset</button>
+    <button type="button" (click)="increment()">+1</button>
+    <button type="button" (click)="reset()">Reset</button>
   `,
 })
 export class SignalsCounter {
@@ -212,9 +212,9 @@ import {Component, effect, signal, untracked} from '@angular/core';
   selector: 'app-theme-saver',
   template: `
     <p>Hello, {{ userName() }}. Theme: {{ theme() }}</p>
-    <button (click)="theme.set('dark')">Dark</button>
-    <button (click)="theme.set('light')">Light</button>
-    <button (click)="userName.set('Guest')">Log out</button>
+    <button type="button" (click)="theme.set('dark')">Dark</button>
+    <button type="button" (click)="theme.set('light')">Light</button>
+    <button type="button" (click)="userName.set('Guest')">Log out</button>
   `,
 })
 export class SignalsThemeSaver {
@@ -243,7 +243,7 @@ Do not use an effect to copy one signal into another, for example `effect(() => 
 
 ### `untracked`: read without depending
 
-Sometimes a function needs a signal's value but should not run again when that signal changes. Wrap the read in `untracked(...)`. In the example above, `untracked(this.userName)` reads the user name, but changing only the user name does not save the theme again. The test checks this: after "Log out" the effect has still run only twice.
+Sometimes a function needs a signal's value but should not run again when that signal changes. Wrap the read in `untracked(...)`. In the example above, `untracked(this.userName)` reads the user name, but changing only the user name does not save the theme again. The test file `theme-saver.spec.ts` checks this: the effect runs once at the start (it saves "light") and once after a click on "Dark". After a click on "Log out" the page shows "Hello, Guest. Theme: dark", but the effect does not run a third time.
 
 `untracked` also accepts a function: `untracked(() => this.logger.log(...))`. Signals read inside it are not dependencies.
 
@@ -274,7 +274,64 @@ readonly kept = linkedSignal<Method[], Method>({
 });
 ```
 
-With this form you must write the two types in angle brackets: the type of the source (`Method[]`) and the type of the value (`Method`). The full component is in `src/app/07-signals/shipping/shipping-picker.ts`. After the user chooses "Courier" and the country changes, `selected` shows "Drone" (the new first option), but `kept` still shows "Courier".
+With this form you must write the two types in angle brackets: the type of the source (`Method[]`) and the type of the value (`Method`). `previous?.value` is the old value; `previous` is `undefined` the first time, so the code uses `?.`.
+
+Here is the whole component with both signals. A button for each option sets both. "Change country" replaces the list of options:
+
+<!-- example: src/app/07-signals/shipping/shipping-picker.ts -->
+
+```ts
+import {Component, linkedSignal, signal} from '@angular/core';
+
+interface Method {
+  id: number;
+  name: string;
+}
+
+@Component({
+  selector: 'app-shipping-picker',
+  template: `
+    @for (option of options(); track option.id) {
+      <button type="button" (click)="choose(option)">{{ option.name }}</button>
+    }
+    <p>Selected: {{ selected().name }}</p>
+    <p>Kept selection: {{ kept().name }}</p>
+    <button type="button" class="change" (click)="changeCountry()">Change country</button>
+  `,
+})
+export class SignalsShippingPicker {
+  readonly options = signal<Method[]>([
+    {id: 1, name: 'Post'},
+    {id: 2, name: 'Courier'},
+    {id: 3, name: 'Pick up'},
+  ]);
+
+  // Starts as the first option. You can set it.
+  // When `options` changes, it goes back to the first option.
+  readonly selected = linkedSignal(() => this.options()[0]);
+
+  // Keeps the user's choice when it still exists in the new list.
+  readonly kept = linkedSignal<Method[], Method>({
+    source: this.options,
+    computation: (newOptions, previous) =>
+      newOptions.find((option) => option.id === previous?.value.id) ?? newOptions[0],
+  });
+
+  choose(option: Method) {
+    this.selected.set(option);
+    this.kept.set(option);
+  }
+
+  changeCountry() {
+    this.options.set([
+      {id: 4, name: 'Drone'},
+      {id: 2, name: 'Courier'},
+    ]);
+  }
+}
+```
+
+At the start both paragraphs show "Post". After the user clicks "Courier" and then "Change country", `selected` shows "Drone" (the new first option), but `kept` still shows "Courier", because "Courier" (id 2) is also in the new list.
 
 ### `debounced`: wait until a value stops changing
 
@@ -282,25 +339,47 @@ With this form you must write the two types in angle brackets: the type of the s
 
 When the user types in a search box, the text changes with every key. Often you want to react only when the user stops typing. Waiting until a value has been quiet for some time is called **debouncing**.
 
-<!-- example: src/app/07-signals/search/search.ts#debounced -->
+<!-- example: src/app/07-signals/search/search.ts -->
 
 ```ts
-readonly query = signal('');
+import {Component, computed, debounced, signal} from '@angular/core';
 
-// Follows `query`, but only after it has not changed for 300 ms.
-readonly settledQuery = debounced(this.query, 300);
+const CITIES = ['Andijan', 'Bukhara', 'Fergana', 'Khiva', 'Namangan', 'Samarkand', 'Tashkent'];
 
-readonly results = computed(() => {
-  const text = this.settledQuery.value().toLowerCase();
-  return CITIES.filter((city) => city.toLowerCase().includes(text));
-});
+@Component({
+  selector: 'app-search',
+  template: `
+    <input #box placeholder="Search a city" (input)="query.set(box.value)" />
+    @if (settledQuery.isLoading()) {
+      <p class="status">Waiting for you to stop typing…</p>
+    }
+    <ul>
+      @for (city of results(); track city) {
+        <li>{{ city }}</li>
+      }
+    </ul>
+  `,
+})
+export class SignalsSearch {
+  readonly query = signal('');
+
+  // Follows `query`, but only after it has not changed for 300 ms.
+  readonly settledQuery = debounced(this.query, 300);
+
+  readonly results = computed(() => {
+    const text = this.settledQuery.value().toLowerCase();
+    return CITIES.filter((city) => city.toLowerCase().includes(text));
+  });
+}
 ```
 
 - `debounced(this.query, 300)` follows `query`, but only after `query` has not changed for 300 milliseconds.
 - It does not return a plain signal. It returns a **resource**: an object with several signals about a value that arrives later. Here you need two of them: `value()` is the last settled value, and `isLoading()` is `true` while the timer is still waiting. [Chapter 17](17-http-and-async-data.md) explains resources in depth.
 - Like `effect`, `debounced` must be created in an injection context, for example as a field value.
+- `debounced` comes from `@angular/core`, like `signal` and `computed`.
+- `(input)="query.set(box.value)"` puts the text of the box into `query` after every key (`#box` is a template reference variable, [chapter 5](05-templates-and-binding.md#template-variables-let-and-ref)).
 
-The full component is in `src/app/07-signals/search/search.ts`. While you type, it shows "Waiting for you to stop typing…". The list changes 300 ms after the last key.
+While you type, the page shows "Waiting for you to stop typing…". The list changes 300 ms after the last key.
 
 ## 6. A realistic example
 
@@ -357,8 +436,8 @@ export class SignalsCart {
   @for (line of lines(); track line.id) {
     <li>
       {{ line.name }}: {{ line.quantity }} × {{ line.price }} €
-      <button (click)="changeQuantity(line.id, 1)">+</button>
-      <button (click)="changeQuantity(line.id, -1)">−</button>
+      <button type="button" (click)="changeQuantity(line.id, 1)">+</button>
+      <button type="button" (click)="changeQuantity(line.id, -1)">−</button>
     </li>
   } @empty {
     <li>Your cart is empty.</li>
@@ -370,7 +449,7 @@ export class SignalsCart {
 } @else {
   <p class="delivery">Spend {{ 30 - total() }} € more for free delivery.</p>
 }
-<button class="backpack" (click)="addBackpack()">Add a backpack</button>
+<button type="button" class="backpack" (click)="addBackpack()">Add a backpack</button>
 ```
 <!-- prettier-ignore-end -->
 
@@ -387,11 +466,15 @@ The cart starts with 6 items for 14 €. After "Add a backpack" it has 7 items f
 
 ### Forgetting the `()` when you read a signal
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 <p>Count: {{ count }}</p>
 ```
+
+<!-- prettier-ignore-end -->
 
 The build shows warnings:
 
@@ -412,8 +495,8 @@ import {Component, signal} from '@angular/core';
   selector: 'app-signals-counter',
   template: `
     <p>Count: {{ count() }}</p>
-    <button (click)="increment()">+1</button>
-    <button (click)="reset()">Reset</button>
+    <button type="button" (click)="increment()">+1</button>
+    <button type="button" (click)="reset()">Reset</button>
   `,
 })
 export class SignalsCounter {
@@ -431,6 +514,8 @@ export class SignalsCounter {
 
 ### Assigning to the signal field
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -438,6 +523,8 @@ increment() {
   this.count = this.count + 1;
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] TS2540: Cannot assign to 'count' because it is a read-only property. [plugin angular-compiler]
@@ -449,6 +536,8 @@ Fix: change the value inside the box with `update` or `set`, as in `increment()`
 
 ### Calling `set` on a computed signal
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -456,6 +545,8 @@ reset() {
   this.doubled.set(0);
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] TS2339: Property 'set' does not exist on type 'Signal<number>'. [plugin angular-compiler]
@@ -473,6 +564,8 @@ readonly selected = linkedSignal(() => this.options()[0]);
 
 ### Changing an array or object inside a signal
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -481,7 +574,9 @@ add() {
 }
 ```
 
-There is no error. But the signal does not know that something changed, because it still holds the same array. In a test, the list showed 3 names but a computed `howMany = computed(() => this.names().length)` still showed `2`. Fix: give the signal a new array or object:
+<!-- prettier-ignore-end -->
+
+There is no error. But the signal does not know that something changed, because it still holds the same array. In a test, the page listed 3 names, but a computed `howMany = computed(() => this.names().length)` still showed `2`. The list looked right only by chance: the click made Angular check the template again, and the template read the same array, which now had 3 items. `howMany` did not compute again, because it recomputes only when the signal reports a change, and the signal reported none. Fix: give the signal a new array or object:
 
 <!-- example: src/app/07-signals/cart/cart.ts#change -->
 
@@ -497,6 +592,8 @@ changeQuantity(id: number, change: number) {
 
 ### Creating an effect in a normal method
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -504,6 +601,8 @@ log() {
   effect(() => console.log(this.count()));
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 When `log()` runs, Angular throws this error:
 
@@ -549,7 +648,7 @@ import {Component, computed, signal} from '@angular/core';
   template: `
     <textarea #box (input)="text.set(box.value)"></textarea>
     <p [class.warning]="tooLong()">{{ remaining() }} characters left</p>
-    <button [disabled]="tooLong() || text() === ''">Send</button>
+    <button type="button" [disabled]="tooLong() || text() === ''">Send</button>
   `,
   styles: `
     .warning {

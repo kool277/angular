@@ -1,3 +1,4 @@
+// #docregion setup
 import {TestBed} from '@angular/core/testing';
 import {provideRouter, Router, withComponentInputBinding} from '@angular/router';
 import {RouterTestingHarness} from '@angular/router/testing';
@@ -18,6 +19,7 @@ describe('route guards', () => {
     router = TestBed.inject(Router);
     auth = TestBed.inject(RoutingAuth);
   });
+  // #enddocregion setup
 
   // #docregion guard-test
   it('sends a visitor who is not logged in to the login page', async () => {

@@ -1,7 +1,7 @@
 import {Component, input} from '@angular/core';
 
 @Component({
-  selector: 'app-user-badge',
+  selector: 'app-role-badge',
   template: `<p>{{ name() }} ({{ role() }})</p>`,
 })
 export class InputsUserBadge {
@@ -10,11 +10,11 @@ export class InputsUserBadge {
 }
 
 @Component({
-  selector: 'app-user-badge-demo',
+  selector: 'app-role-badge-demo',
   imports: [InputsUserBadge],
   template: `
-    <app-user-badge name="Aziza" role="admin" />
-    <app-user-badge [name]="visitor" />
+    <app-role-badge name="Aziza" role="admin" />
+    <app-role-badge [name]="visitor" />
   `,
 })
 export class InputsUserBadgeDemo {

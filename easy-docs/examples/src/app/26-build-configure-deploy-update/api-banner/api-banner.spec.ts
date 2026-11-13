@@ -7,11 +7,9 @@ describe('BuildApiBanner', () => {
     const fixture = TestBed.createComponent(BuildApiBanner);
     await fixture.whenStable();
     const page = fixture.nativeElement as HTMLElement;
-    // This workspace has no fileReplacements, so the base file is used.
-    expect(environment.apiUrl).toBe('https://api.silkroad-museum.example');
-    expect(page.querySelector('.api')?.textContent).toBe(
-      'Data comes from https://api.silkroad-museum.example',
-    );
+    // `environment` is the file that this build uses: in a project with
+    // file replacements, `ng test` uses the development file.
+    expect(page.querySelector('.api')?.textContent).toBe(`Data comes from ${environment.apiUrl}`);
   });
 
   it('knows that tests run in development mode', async () => {

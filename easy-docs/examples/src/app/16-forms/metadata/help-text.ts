@@ -1,7 +1,7 @@
+// #docregion key
 import {Component, computed, signal} from '@angular/core';
 import {createMetadataKey, form, FormField, metadata} from '@angular/forms/signals';
 
-// #docregion key
 export const HELP_TEXT = createMetadataKey<string>();
 // #enddocregion key
 
@@ -14,9 +14,9 @@ export const HELP_TEXT = createMetadataKey<string>();
   `,
 })
 export class FormsHelpText {
+  // #docregion form
   readonly nameModel = signal({username: ''});
 
-  // #docregion form
   readonly nameForm = form(this.nameModel, (path) => {
     metadata(path.username, HELP_TEXT, ({value}) =>
       value().length < 3 ? 'At least 3 characters.' : 'Looks good.',

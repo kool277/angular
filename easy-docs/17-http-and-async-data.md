@@ -94,7 +94,25 @@ export interface NewTea {
 | `teas.error()`                 | The error, if the request failed; otherwise `undefined`.                                                                    |
 | `teas.isLoading()`             | `true` while the request is on its way.                                                                                     |
 
-The page first shows "Loading…", then the three teas. The data comes from `easy-docs/examples/public/http-demo/teas.json`. `ng serve` serves every file in `public/`, so the demo works without a real server.
+The page first shows "Loading…", then the three teas. `ng serve` serves every file in the `public/` folder of your project, so the demo works without a real server. To try it in your own app, create the file `public/http-demo/teas.json` with this content:
+
+<!-- example: public/http-demo/teas.json -->
+
+```json
+[
+  {"id": 1, "name": "Green tea", "price": 4},
+  {"id": 2, "name": "Black tea", "price": 3},
+  {"id": 3, "name": "Mint tea", "price": 5}
+]
+```
+
+Later examples also load one tea from `/http-demo/teas/1.json`. For them, create `public/http-demo/teas/1.json`, `2.json` and `3.json`, each with one tea object, for example:
+
+<!-- example: public/http-demo/teas/1.json -->
+
+```json
+{"id": 1, "name": "Green tea", "price": 4}
+```
 
 You do not need to set anything up for HTTP. Since Angular 21, `HttpClient` (and so `httpResource`) works without any provider. Part 5 shows when you still add `provideHttpClient()`.
 
@@ -128,7 +146,43 @@ sequenceDiagram
 
 `httpResource` is built on `HttpClient`, the Angular service that sends requests. You use `HttpClient` directly when you **change** data on the server, and in a lot of existing code.
 
-Put the requests into a service. Then components do not need to know URLs, and tests can replace the service ([chapter 14](14-services-and-dependency-injection.md)):
+Put the requests into a service. Then components do not need to know URLs, and tests can replace the service ([chapter 14](14-services-and-dependency-injection.md)). The whole service of this chapter:
+
+<!-- example: src/app/17-http-and-async-data/client/tea-api.ts -->
+
+```ts
+import {HttpClient} from '@angular/common/http';
+import {Service, inject} from '@angular/core';
+import {Observable} from 'rxjs';
+import {NewTea, Tea} from '../tea';
+
+@Service()
+export class HttpTeaApi {
+  private readonly http = inject(HttpClient);
+
+  getTeas(): Observable<Tea[]> {
+    return this.http.get<Tea[]>('/http-demo/teas.json');
+  }
+
+  getTea(id: number): Observable<Tea> {
+    return this.http.get<Tea>(`/http-demo/teas/${id}.json`);
+  }
+
+  searchTeas(text: string): Observable<Tea[]> {
+    return this.http.get<Tea[]>('/http-demo/teas.json', {
+      params: {q: text},
+      headers: {'X-Shop': 'tea'},
+      timeout: 5000,
+    });
+  }
+
+  addTea(tea: NewTea): Observable<Tea> {
+    return this.http.post<Tea>('/http-demo/teas.json', tea);
+  }
+}
+```
+
+The next sections explain its methods. First `getTeas()`:
 
 <!-- example: src/app/17-http-and-async-data/client/tea-api.ts#get -->
 
@@ -138,6 +192,7 @@ getTeas(): Observable<Tea[]> {
 }
 ```
 
+- `inject(HttpClient)` gets Angular's HTTP service. `Observable` is a type from the `rxjs` library, which Angular installs with every new app.
 - `this.http.get<Tea[]>(url)` prepares a **GET** request. GET means "give me data".
 - `<Tea[]>` is the type of the answer. This is only a promise you make to TypeScript: Angular does **not** check that the server really sends teas. If the server's data can be wrong, check it in your code.
 - The method returns an **Observable**: a stream of values from the RxJS library. Here the stream gives one value (the answer) and then ends. [RxJS interop](18-rxjs-interop.md) explains Observables in depth.
@@ -256,7 +311,37 @@ For answers that are not JSON, use `httpResource.text(...)`, `httpResource.blob(
 
 ### `resource`: any async work as signals
 
-`httpResource` is a special case of `resource`, from `@angular/core`. `resource` works with any function that returns a Promise. This example pretends to load a quote from a slow server:
+`httpResource` is a special case of `resource`, from `@angular/core`. `resource` works with any function that returns a Promise. This example pretends to load a quote from a slow server. The "server" is a function that answers after 50 ms, and fails for the fourth quote:
+
+<!-- example: src/app/17-http-and-async-data/resource/quote-server.ts -->
+
+```ts
+const QUOTES = [
+  'Tea is liquid wisdom.',
+  'Where there is tea, there is hope.',
+  'A cup of tea makes everything better.',
+];
+
+/** Pretends to be a slow server: the quote arrives after 50 ms. */
+export function loadQuote(index: number, abortSignal: AbortSignal): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      if (index < QUOTES.length) {
+        resolve(QUOTES[index]);
+      } else {
+        reject(new Error(`There is no quote number ${index + 1}.`));
+      }
+    }, 50);
+    // Stop waiting when the resource does not need this answer anymore.
+    abortSignal.addEventListener('abort', () => clearTimeout(timer));
+  });
+}
+```
+
+- `new Promise((resolve, reject) => ...)` makes a Promise. Call `resolve(value)` for success and `reject(error)` for a failure.
+- `abortSignal.addEventListener('abort', ...)` runs a function when the work is not needed anymore. Here it stops the timer with `clearTimeout`.
+
+The resource in the component:
 
 <!-- example: src/app/17-http-and-async-data/resource/quote-box.ts#resource -->
 
@@ -268,7 +353,7 @@ protected readonly quote = resource({
 ```
 
 - `params` is a reactive function, like `computed`. Whenever its value changes, the resource runs the loader again.
-- `loader` is an `async` function or a function that returns a Promise. It receives `params` and an **`AbortSignal`**: an object from the browser that says "this work is not needed anymore". Pass it to `fetch` (or, as here, use it to stop a timer) so that old work stops.
+- `loader` is an `async` function or a function that returns a Promise. It receives `params` and an **`AbortSignal`**: an object from the browser that says "this work is not needed anymore". Pass it to `fetch` (the browser's own function for HTTP requests) or, as here, use it to stop a timer, so that old work stops.
 - If `params` returns `undefined`, the loader does not run and the status is `'idle'`.
 
 Every resource has the same signals:
@@ -353,6 +438,22 @@ When the `id` input changes, `rxResource` subscribes to the new Observable and s
 
 An **interceptor** is a function that sees every request before it goes out, and every response before your code gets it. Typical jobs: add the login token, log requests, retry failed requests, show a global spinner.
 
+The first example adds a login token to every request. A **login token** is a secret text that the server gives the user after login. Later requests send it, so the server knows who asks. A small service keeps it:
+
+<!-- example: src/app/17-http-and-async-data/interceptors/session.ts -->
+
+```ts
+import {Service, signal} from '@angular/core';
+
+/** Holds the login token. A real app sets it after the user logs in. */
+@Service()
+export class HttpSession {
+  readonly token = signal<string | null>(null);
+}
+```
+
+The interceptor:
+
 <!-- example: src/app/17-http-and-async-data/interceptors/auth-interceptor.ts -->
 
 ```ts
@@ -374,6 +475,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
 
 - `HttpInterceptorFn` is the type of an interceptor: a function of `(request, next)`.
 - `request` is the outgoing request. It cannot be changed. `request.clone({...})` makes a copy with changes; `setHeaders` adds headers to the copy.
+- `Authorization: Bearer <token>` is the usual header for sending a login token. `Bearer` is a fixed word that tells the server what kind of token follows.
 - `next(request)` passes the request on to the next interceptor, and in the end to the server. It returns an Observable of the response.
 - An interceptor runs in an injection context, so `inject()` works in it.
 
@@ -433,7 +535,7 @@ Interceptors run in the order of the list: here `authInterceptor` first, then `l
 
 Other features of `provideHttpClient`:
 
-- `withXhr()` uses the older `XMLHttpRequest` browser API instead of `fetch`. You need it only for upload progress events. Do not use it with server rendering.
+- `withXhr()` uses the older `XMLHttpRequest` browser API instead of `fetch` (the newer browser function for HTTP requests). You need it only for upload progress events. Do not use it with server rendering.
 - `withFetch()` is **deprecated**: `fetch` is already the default, so you can remove it from older code.
 - `withInterceptorsFromDi()` turns on the older class-based interceptors (`HTTP_INTERCEPTORS`). Prefer interceptor functions.
 - `withXsrfConfiguration(...)` and `withNoXsrfProtection()` change a security feature ([Security](25-security.md)).
@@ -443,7 +545,30 @@ In older code you will see `HttpClientModule` in an NgModule. It is deprecated; 
 
 ### Testing HTTP code without a network
 
-Tests must not talk to a real server: it is slow, and its data changes. `provideHttpClientTesting()` from `@angular/common/http/testing` replaces the network with a **test backend**. Requests stop there and wait. `HttpTestingController` lets the test find them and answer them:
+Tests must not talk to a real server: it is slow, and its data changes. `provideHttpClientTesting()` from `@angular/common/http/testing` replaces the network with a **test backend**. Requests stop there and wait. `HttpTestingController` lets the test find them and answer them. The test of the service creates both in `beforeEach`:
+
+<!-- example: src/app/17-http-and-async-data/client/tea-api.spec.ts#setup -->
+
+```ts
+import {provideHttpClientTesting, HttpTestingController} from '@angular/common/http/testing';
+import {TestBed} from '@angular/core/testing';
+import {firstValueFrom} from 'rxjs';
+import {HttpTeaApi} from './tea-api';
+
+describe('HttpTeaApi', () => {
+  let api: HttpTeaApi;
+  let httpTesting: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({providers: [provideHttpClientTesting()]});
+    api = TestBed.inject(HttpTeaApi);
+    httpTesting = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => httpTesting.verify());
+```
+
+`afterEach` runs after every test. The first test:
 
 <!-- example: src/app/17-http-and-async-data/client/tea-api.spec.ts#get -->
 
@@ -640,25 +765,32 @@ it('adds the token to every request', () => {
 
 > **Developer preview:** route resources (`withRouterResources`, the route `resources` property, `ResourceContext` and `nonBlocking`) are new in Angular 22.2 and may still change. See [developer preview](https://angular.dev/reference/releases#developer-preview).
 
-In [chapter 15](15-routing.md) a **resolver** loaded data before a page opened. Route resources do the same job with resources. A route gets a `resources` function. It returns an object of resources; each key becomes an input of the page:
+In [chapter 15](15-routing.md) a **resolver** loaded data before a page opened. Route resources do the same job with resources. A route gets a `resources` function. It returns an object of resources; each key becomes an input of the page. `nonBlocking` comes from `@angular/router`:
 
-<!-- example: src/app/17-http-and-async-data/route-resources/tea.routes.ts#routes -->
+<!-- example: src/app/17-http-and-async-data/route-resources/tea.routes.ts -->
 
 ```ts
-{
-  path: 'teas/:id',
-  component: HttpRouteTeaPage,
-  resources: (context) => ({
-    tea: httpResource<Tea>(() => `/http-demo/teas/${context.params()['id']}.json`),
-  }),
-},
-{
-  path: 'menu',
-  component: HttpRouteMenuPage,
-  resources: () => ({
-    teas: nonBlocking(httpResource<Tea[]>(() => '/http-demo/teas.json')),
-  }),
-},
+import {httpResource} from '@angular/common/http';
+import {Routes, nonBlocking} from '@angular/router';
+import {Tea} from '../tea';
+import {HttpRouteMenuPage, HttpRouteTeaPage} from './pages';
+
+export const teaResourceRoutes: Routes = [
+  {
+    path: 'teas/:id',
+    component: HttpRouteTeaPage,
+    resources: (context) => ({
+      tea: httpResource<Tea>(() => `/http-demo/teas/${context.params()['id']}.json`),
+    }),
+  },
+  {
+    path: 'menu',
+    component: HttpRouteMenuPage,
+    resources: () => ({
+      teas: nonBlocking(httpResource<Tea[]>(() => '/http-demo/teas.json')),
+    }),
+  },
+];
 ```
 
 - `resources: (context) => ({...})` runs in an injection context, so `httpResource` and `inject()` work in it.
@@ -671,6 +803,9 @@ The pages:
 <!-- example: src/app/17-http-and-async-data/route-resources/pages.ts#blocking-page -->
 
 ```ts
+import {Component, Resource, input} from '@angular/core';
+import {Tea} from '../tea';
+
 @Component({
   template: `<h2>{{ tea().name }}</h2>
     <p>{{ tea().price }} €</p>`,
@@ -705,7 +840,7 @@ export class HttpRouteMenuPage {
 }
 ```
 
-Turn route resources on in `provideRouter`, together with input binding:
+`Resource` (the type of any resource) comes from `@angular/core`. Turn route resources on in `provideRouter`, together with input binding. `withRouterResources` comes from `@angular/router`, like `provideRouter`:
 
 <!-- example: src/app/17-http-and-async-data/route-resources/tea.routes.spec.ts#setup -->
 
@@ -727,14 +862,18 @@ Compared with resolvers, the resources of all matched routes load at the same ti
 
 ### Forgetting to subscribe
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
 save(name: string): void {
-  this.api.addTea({ name, price: 4 });
+  this.api.addTea({name, price: 4});
   this.message.set('Saved!');
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 There is no error. The page says "Saved!", but the server never gets the tea: the Observable from `post` sends nothing until someone subscribes. In the browser's developer tools, the Network tab shows no request. Subscribe and handle the answer:
 
@@ -762,11 +901,15 @@ private describe(error: HttpErrorResponse): string {
 
 ### Reading `value()` when the resource has an error
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
 template: `<p>{{ teas.value().length }} teas</p>`,
 ```
+
+<!-- prettier-ignore-end -->
 
 When the request fails, the page stops updating, and the console shows:
 
@@ -806,6 +949,8 @@ export class HttpTeaList {
 
 ### Creating a resource in a method
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -814,45 +959,35 @@ load(): void {
 }
 ```
 
+<!-- prettier-ignore-end -->
+
 A click on the button that calls `load()` gives:
 
 ```text
 Error: NG0203: httpResource() can only be used within an injection context such as a constructor, a factory function, a field initializer, or a function used with `runInInjectionContext`. Find more at https://v22.angular.dev/errors/NG0203
 ```
 
-Resources (`httpResource`, `resource`, `rxResource`) must be created in an injection context. Create them as fields. To load something else later, change a signal that the resource's function reads, or call `reload()`:
+Resources (`httpResource`, `resource`, `rxResource`) must be created in an injection context. Create them as fields. To load something else later, change a signal that the resource's function reads, or call `reload()`. The tea shop of [part 6](#a-tea-shop-list-details-and-adding) does this: a click changes `selectedId`, and the `selected` resource loads the new tea:
 
-<!-- example: src/app/17-http-and-async-data/exercise/tea-browser.ts -->
+<!-- example: src/app/17-http-and-async-data/shop/tea-shop.ts#resources -->
 
 ```ts
-import {httpResource} from '@angular/common/http';
-import {Component, signal} from '@angular/core';
-import {Tea} from '../tea';
+// The list: loaded once, loaded again by reload().
+protected readonly teas = httpResource<Tea[]>(() => '/http-demo/teas.json', {
+  defaultValue: [],
+});
 
-@Component({
-  selector: 'app-http-tea-browser',
-  template: `
-    <button type="button" (click)="id.set(id() - 1)" [disabled]="id() === 1">Previous</button>
-    <span>Tea {{ id() }}</span>
-    <button type="button" (click)="id.set(id() + 1)">Next</button>
-
-    @if (tea.hasValue()) {
-      <h2>{{ tea.value().name }}</h2>
-    } @else if (tea.error()) {
-      <p>There is no tea number {{ id() }}.</p>
-      <button type="button" (click)="tea.reload()">Retry</button>
-    } @else {
-      <p>Loading…</p>
-    }
-  `,
-})
-export class HttpTeaBrowser {
-  protected readonly id = signal(1);
-  protected readonly tea = httpResource<Tea>(() => `/http-demo/teas/${this.id()}.json`);
-}
+// The details: no request while nothing is selected.
+protected readonly selectedId = signal<number | undefined>(undefined);
+protected readonly selected = httpResource<Tea>(() => {
+  const id = this.selectedId();
+  return id === undefined ? undefined : `/http-demo/teas/${id}.json`;
+});
 ```
 
 ### Changing the request in an interceptor
+
+<!-- prettier-ignore-start -->
 
 <!-- wrong -->
 
@@ -862,6 +997,8 @@ export const wrongInterceptor: HttpInterceptorFn = (request, next) => {
   return next(request);
 };
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] TS2540: Cannot assign to 'headers' because it is a read-only property. [plugin angular-compiler]
@@ -890,11 +1027,15 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
 
 ### `provideHttpClientTesting()` before `provideHttpClient()`
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
 providers: [provideHttpClientTesting(), provideHttpClient(withInterceptors([authInterceptor]))],
 ```
+
+<!-- prettier-ignore-end -->
 
 The test fails with:
 

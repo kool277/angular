@@ -1,6 +1,8 @@
+// #docregion imports
 import {Component, inputBinding, outputBinding, signal} from '@angular/core';
 import {TestBed} from '@angular/core/testing';
 import {TestingRating} from './rating';
+// #enddocregion imports
 
 describe('TestingRating', () => {
   // #docregion set-input

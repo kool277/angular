@@ -98,27 +98,50 @@ Use the prefix `app` (or your project's prefix) in selectors, so they do not cla
 
 A directive gets inputs with `input()`, like a component. A useful trick: give one input **the same name as the selector**. Then one binding both switches the directive on and passes a value:
 
-<!-- example: src/app/11-directives/color-highlight/color-highlight.ts#inputs -->
+<!-- example: src/app/11-directives/color-highlight/color-highlight.ts -->
 
 ```ts
-readonly appColorHighlight = input('');
-readonly defaultColor = input('yellow');
+import {Component, Directive, input, signal} from '@angular/core';
+
+@Directive({
+  selector: '[appColorHighlight]',
+  host: {
+    '(mouseenter)': 'hovered.set(true)',
+    '(mouseleave)': 'hovered.set(false)',
+    '[style.background-color]': 'hovered() ? color() : null',
+  },
+})
+export class DirColorHighlight {
+  readonly appColorHighlight = input('');
+  readonly defaultColor = input('yellow');
+
+  protected readonly hovered = signal(false);
+
+  protected color(): string {
+    return this.appColorHighlight() || this.defaultColor();
+  }
+}
+
+@Component({
+  selector: 'app-color-highlight-demo',
+  imports: [DirColorHighlight],
+  template: `
+    <p [appColorHighlight]="favorite()">Uses the chosen color.</p>
+    <p appColorHighlight defaultColor="lightblue">No color chosen: light blue.</p>
+    <p appColorHighlight>No color at all: yellow.</p>
+    <button type="button" (click)="favorite.set('pink')">Choose pink</button>
+  `,
+})
+export class DirColorHighlightDemo {
+  readonly favorite = signal('lightgreen');
+}
 ```
 
-<!-- example: src/app/11-directives/color-highlight/color-highlight.ts#usage -->
-
-```html
-<p [appColorHighlight]="favorite()">Uses the chosen color.</p>
-<p appColorHighlight defaultColor="lightblue">No color chosen: light blue.</p>
-<p appColorHighlight>No color at all: yellow.</p>
-<button type="button" (click)="favorite.set('pink')">Choose pink</button>
-```
-
+- `readonly appColorHighlight = input('')` has the same name as the selector `[appColorHighlight]`.
+- `color()` uses `appColorHighlight()` when it is not empty, otherwise `defaultColor()`. The `||` operator gives the right side when the left side is empty.
 - `[appColorHighlight]="favorite()"` matches the selector **and** sets the input `appColorHighlight`.
 - `defaultColor="lightblue"` sets the second input with plain text. The directive must already be on the element (here through `appColorHighlight`), otherwise Angular does not know `defaultColor`.
 - With no value, `appColorHighlight` is the empty string `''`, so the directive uses `defaultColor()`, which is `'yellow'` unless the template sets it.
-
-The whole file is `src/app/11-directives/color-highlight/color-highlight.ts`.
 
 ### When you need the real element: `ElementRef`
 
@@ -177,6 +200,17 @@ Rendering a template creates an **embedded view**: a small piece of page made fr
 <!-- example: src/app/11-directives/show-for/show-for.ts#directive -->
 
 ```ts
+import {
+  Component,
+  Directive,
+  TemplateRef,
+  ViewContainerRef,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
+
 @Directive({
   selector: '[appShowFor]',
 })
@@ -231,6 +265,34 @@ Without the shorthand, the same thing looks like this:
 </ng-template>
 ```
 
+The whole demo component. It imports `DirShowFor` and keeps the role in a signal; the buttons at the end change it. The `@if (ready())` part is explained in [part 7](#two-structural-directives-on-one-element).
+
+<!-- example: src/app/11-directives/show-for/show-for.ts#demo -->
+
+```ts
+@Component({
+  selector: 'app-show-for-demo',
+  imports: [DirShowFor],
+  template: `
+    <p>Signed in as: {{ role() }}</p>
+    <button type="button" *appShowFor="['admin', 'editor']; role: role()">Edit post</button>
+    <button type="button" *appShowFor="['admin']; role: role()">Delete post</button>
+    <ng-template [appShowFor]="['admin']" [appShowForRole]="role()">
+      <p class="admin-note">Only admins see this note.</p>
+    </ng-template>
+    @if (ready()) {
+      <button type="button" *appShowFor="['admin']; role: role()">Publish</button>
+    }
+    <button type="button" (click)="role.set('admin')">Become admin</button>
+    <button type="button" (click)="role.set('guest')">Become guest</button>
+  `,
+})
+export class DirShowForDemo {
+  readonly role = signal('editor');
+  readonly ready = signal(true);
+}
+```
+
 ```mermaid
 flowchart LR
   A["button with *appShowFor"] -->|"Angular rewrites"| B["ng-template with appShowFor and appShowForRole, button inside"]
@@ -250,6 +312,8 @@ Two small directives:
 <!-- example: src/app/11-directives/composition/icon-button.ts#parts -->
 
 ```ts
+import {Component, Directive, input, output, signal} from '@angular/core';
+
 @Directive({
   selector: '[appTooltip]',
   host: {
@@ -312,17 +376,26 @@ export class DirIconButton {
 - By default the inputs and outputs of a host directive are **hidden**. You choose which ones the component shows to its users: `inputs: ['appTooltip: hint']` makes the input `appTooltip` available under the name `hint`. `outputs: ['pressed']` shows the output with its own name.
 - The selector `button[appIconButton]` is an attribute selector on a real `<button>`, so the button keeps all its normal behavior ([chapter 4](04-components.md)).
 
-<!-- prettier-ignore-start -->
-<!-- example: src/app/11-directives/composition/icon-button.ts#usage -->
+The demo component imports only `DirIconButton`. The host directives come with it:
 
-```html
-<button appIconButton icon="🗑" hint="Delete" (pressed)="deleted.set(true)"></button>
-<button appIconButton icon="✎" hint="Edit"></button>
-@if (deleted()) {
-  <p>Deleted.</p>
+<!-- example: src/app/11-directives/composition/icon-button.ts#demo -->
+
+```ts
+@Component({
+  selector: 'app-icon-button-demo',
+  imports: [DirIconButton],
+  template: `
+    <button appIconButton icon="🗑" hint="Delete" (pressed)="deleted.set(true)"></button>
+    <button appIconButton icon="✎" hint="Edit"></button>
+    @if (deleted()) {
+      <p>Deleted.</p>
+    }
+  `,
+})
+export class DirIconButtonDemo {
+  readonly deleted = signal(false);
 }
 ```
-<!-- prettier-ignore-end -->
 
 Rules to remember:
 
@@ -491,6 +564,8 @@ describe('DirUserMenu with DirClickOutside', () => {
 
 ### Forgetting to import the directive
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -501,36 +576,17 @@ describe('DirUserMenu with DirClickOutside', () => {
 export class TmpWrong1 {}
 ```
 
+<!-- prettier-ignore-end -->
+
 ```text
 ✘ [ERROR] NG8002: Can't bind to 'appColorHighlight' since it isn't a known property of 'p'. Find more at https://next.angular.dev/errors/NG8002 [plugin angular-compiler]
 ```
 
-Without a binding (`<p appColorHighlight>`), there is **no error at all**: the attribute stays a plain HTML attribute and nothing happens when you point at the text. Fix: add the directive to `imports`:
+Without a binding (`<p appColorHighlight>`), there is **no error at all**: the attribute stays a plain HTML attribute and nothing happens when you point at the text. Fix: add the directive to `imports`, as the demo in [Inputs on a directive](#inputs-on-a-directive) does:
 
-<!-- example: src/app/11-directives/color-highlight/color-highlight.ts -->
+<!-- example: src/app/11-directives/color-highlight/color-highlight.ts#demo -->
 
 ```ts
-import {Component, Directive, input, signal} from '@angular/core';
-
-@Directive({
-  selector: '[appColorHighlight]',
-  host: {
-    '(mouseenter)': 'hovered.set(true)',
-    '(mouseleave)': 'hovered.set(false)',
-    '[style.background-color]': 'hovered() ? color() : null',
-  },
-})
-export class DirColorHighlight {
-  readonly appColorHighlight = input('');
-  readonly defaultColor = input('yellow');
-
-  protected readonly hovered = signal(false);
-
-  protected color(): string {
-    return this.appColorHighlight() || this.defaultColor();
-  }
-}
-
 @Component({
   selector: 'app-color-highlight-demo',
   imports: [DirColorHighlight],
@@ -548,11 +604,15 @@ export class DirColorHighlightDemo {
 
 ### Using a structural directive without `*`
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 <button [appShowFor]="['admin']" [appShowForRole]="role()">Delete</button>
 ```
+
+<!-- prettier-ignore-end -->
 
 The build works, but the page breaks while it runs. The browser console (or a test) shows:
 
@@ -572,11 +632,15 @@ Error: NG0201: No provider for TemplateRef found. Find more at https://v22.angul
 
 ### Two structural directives on one element
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 <button *appShowFor="['admin']; role: role()" *ngIf="ready()">Delete</button>
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] NG5002: Can't have multiple template bindings on one element. Use only one attribute prefixed with * [plugin angular-compiler]
@@ -596,11 +660,15 @@ Each `*` creates one `<ng-template>`, and an element can only be inside one. Fix
 
 ### Binding an input of a host directive that the component does not show
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 <button appIconButton icon="x" [appTooltip]="'Hi'"></button>
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] NG8002: Can't bind to 'appTooltip' since it isn't a known property of 'button'. Find more at https://next.angular.dev/errors/NG8002 [plugin angular-compiler]

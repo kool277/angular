@@ -102,6 +102,14 @@ flowchart LR
   D --> E
 ```
 
+The three cards below and a small demo component are all in one file, `encapsulation/cards.ts`. The file starts with this import line (`ViewEncapsulation` holds the names of the modes):
+
+<!-- example: src/app/09-styling/encapsulation/cards.ts#import -->
+
+```ts
+import {Component, ViewEncapsulation} from '@angular/core';
+```
+
 <!-- example: src/app/09-styling/encapsulation/cards.ts#emulated -->
 
 ```ts
@@ -171,7 +179,27 @@ Now `.label { font-weight: bold }` is a global rule. It also makes the `.label` 
 export class StylingShadowCard {}
 ```
 
-The browser creates a **shadow root** on `<app-shadow-card>`: a separate tree for the template and its CSS. Styles inside it do not leak out. This mode also changes how events and browser developer tools see the elements, so learn about Shadow DOM before you choose it. All four cards are in `src/app/09-styling/encapsulation/cards.ts`.
+The browser creates a **shadow root** on `<app-shadow-card>`: a separate tree for the template and its CSS. Styles inside it do not leak out. This mode also changes how events and browser developer tools see the elements, so learn about Shadow DOM before you choose it.
+
+The end of the file is the demo component. It shows the three cards and, below them, a paragraph with the same class `label` outside every card:
+
+<!-- example: src/app/09-styling/encapsulation/cards.ts#demo -->
+
+```ts
+@Component({
+  selector: 'app-encapsulation-demo',
+  imports: [StylingEmulatedCard, StylingNoneCard, StylingShadowCard],
+  template: `
+    <app-emulated-card />
+    <app-none-card />
+    <app-shadow-card />
+    <p class="label">Outside every card</p>
+  `,
+})
+export class StylingEncapsulationDemo {}
+```
+
+On the page, "Emulated" is blue, "None" is bold, "Shadow DOM" is green, and "Outside every card" is bold (because of the `None` card's global rule) but not blue or green.
 
 ### `:host`
 
@@ -212,7 +240,7 @@ export class StylingHelpLink {}
 
 // Older code. Avoid ::ng-deep in new code.
 @Component({
-  selector: 'app-footer',
+  selector: 'app-page-footer',
   imports: [StylingHelpLink],
   template: `<footer><app-help-link /></footer>`,
   styles: `
@@ -227,11 +255,32 @@ export class StylingHelpLink {}
 export class StylingFooter {}
 ```
 
-The test shows that `a { color: red }` does **not** color the link inside `<app-help-link>`, but `:host ::ng-deep a` does remove its underline. Instead of `::ng-deep`, give the child an input (for example a `variant`) or use CSS custom properties, which pass from parent to child elements (see the realistic example).
+The test shows that `a { color: red }` does **not** color the link inside `<app-help-link>`, but `:host ::ng-deep a` does remove its underline. (`getComputedStyle` is a browser function that returns the styles an element really has; `'rgb(255, 0, 0)'` is red.)
+
+<!-- example: src/app/09-styling/deep/deep-legacy.spec.ts -->
+
+```ts
+import {TestBed} from '@angular/core/testing';
+import {StylingFooter} from './deep-legacy';
+
+describe('::ng-deep', () => {
+  it('reaches into a child component, a normal rule does not', async () => {
+    const fixture = TestBed.createComponent(StylingFooter);
+    await fixture.whenStable();
+    const link = (fixture.nativeElement as HTMLElement).querySelector('a')!;
+    // The normal rule `a { color: red }` does not reach the child's <a>.
+    expect(getComputedStyle(link).color).not.toBe('rgb(255, 0, 0)');
+    // The ::ng-deep rule does.
+    expect(getComputedStyle(link).textDecoration).toBe('none');
+  });
+});
+```
+
+Instead of `::ng-deep`, give the child an input (for example a `variant`) or use CSS custom properties, which pass from parent to child elements (see the realistic example).
 
 ### Global styles
 
-Some CSS should apply to the whole app: fonts, colors of the page background, a CSS reset. Put it in `src/styles.css`. The file `angular.json` lists it under `"styles"`, so Angular adds it to every page. These rules are normal global CSS: they also reach inside components with `Emulated` encapsulation.
+Some CSS should apply to the whole app: fonts, colors of the page background, a **CSS reset** (a set of rules that removes the browser's own default margins and styles, so that every browser starts the same). Put it in `src/styles.css`. The file `angular.json` lists it under `"styles"`, so Angular adds it to every page. These rules are normal global CSS: they also reach inside components with `Emulated` encapsulation.
 
 ### Tailwind CSS
 
@@ -243,26 +292,41 @@ The quickest way: run this in the folder of your project:
 ng add tailwindcss
 ```
 
-It installs the packages, sets up the build and adds Tailwind to `src/styles.css`.
-
-The manual way does the same in three steps:
+The CLI first says which package it will install and asks `Would you like to proceed?`. Type `Y` and press Enter. To skip this question, add `--skip-confirmation`:
 
 ```shell
-# 1. Install Tailwind and its PostCSS plugin
-npm install tailwindcss @tailwindcss/postcss postcss
-
-# 2. Tell the build to use the plugin
-cat > .postcssrc.json <<'EOF'
-{
-  "plugins": {
-    "@tailwindcss/postcss": {}
-  }
-}
-EOF
-
-# 3. Import Tailwind in the global styles
-echo "@import 'tailwindcss';" >> src/styles.css
+ng add tailwindcss --skip-confirmation
 ```
+
+It installs the packages, sets up the build and adds Tailwind to `src/styles.css`.
+
+Tailwind works through **PostCSS**, a tool that changes CSS files during the build. Tailwind is a **plugin** for PostCSS: an extra part that PostCSS loads and runs. The manual way sets this up in three steps. They work on Windows, macOS and Linux.
+
+1. Install Tailwind and its PostCSS plugin. Run this in the folder of your project:
+
+   ```shell
+   npm install tailwindcss @tailwindcss/postcss postcss
+   ```
+
+2. Tell the build to use the plugin. In your editor, create a new file `.postcssrc.json` in the folder of your project (next to `package.json`), with this content:
+
+   <!-- example: src/app/09-styling/tailwind-setup/postcssrc.json -->
+
+   ```json
+   {
+     "plugins": {
+       "@tailwindcss/postcss": {}
+     }
+   }
+   ```
+
+3. Import Tailwind in the global styles. Open `src/styles.css` and add this line at the end:
+
+   <!-- example: src/app/09-styling/tailwind-setup/styles-addition.css#import -->
+
+   ```css
+   @import 'tailwindcss';
+   ```
 
 After that, run `ng serve` and use the classes in any template, for example `<h1 class="text-3xl font-bold underline">`.
 
@@ -362,6 +426,8 @@ How it fits together:
 
 ### A wrong path in `styleUrl`
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -372,6 +438,8 @@ How it fits together:
 })
 export class W1 {}
 ```
+
+<!-- prettier-ignore-end -->
 
 The file `notice.css` does not exist next to this component:
 
@@ -415,6 +483,8 @@ export class StylingProfileCardDemo {}
 
 ### A list in `styleUrl`
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -425,6 +495,8 @@ export class StylingProfileCardDemo {}
 })
 export class W2 {}
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] TS2322: Type 'string[]' is not assignable to type 'string'. [plugin angular-compiler]
@@ -437,6 +509,8 @@ Fix: `styleUrl` (singular) takes one string, `styleUrl: './w2.css'`, as in the p
 
 ### Trying to style a child component from the parent
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```css
@@ -445,7 +519,9 @@ a {
 }
 ```
 
-If this rule is in the footer's CSS and the `<a>` is inside the child `<app-help-link>`, there is no error, but the link does not turn red. The test in `src/app/09-styling/deep/deep-legacy.spec.ts` checks exactly this. The parent's CSS only matches the parent's own template. Fix: put the rule in the child's own styles, or let the parent control the child with an input or a CSS custom property, as the profile card does with `--accent`:
+<!-- prettier-ignore-end -->
+
+If this rule is in the footer's CSS and the `<a>` is inside the child `<app-help-link>`, there is no error, but the link does not turn red. The `::ng-deep` test in [part 5](#ng-deep-only-in-older-code) checks exactly this: the link's color is not red. The parent's CSS only matches the parent's own template. Fix: put the rule in the child's own styles, or let the parent control the child with an input or a CSS custom property, as the profile card does with `--accent`:
 
 <!-- example: src/app/09-styling/profile-card/profile-card.css#host -->
 
@@ -465,6 +541,8 @@ If this rule is in the footer's CSS and the `<a>` is inside the child `<app-help
 
 ### Forgetting `display` on `:host`
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```css
@@ -473,6 +551,8 @@ If this rule is in the footer's CSS and the `<a>` is inside the child `<app-help
   border: 2px solid orange;
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 There is no error. But a custom element like `<app-notice>` is `inline`, like a `<span>`. The border wraps each line of text instead of a box, and `width` or `height` have no effect. Fix: give the host a `display` value:
 

@@ -1,6 +1,6 @@
+// #docregion pure
 import {Pipe, PipeTransform} from '@angular/core';
 
-// #docregion pure
 @Pipe({
   name: 'joinNames',
 })

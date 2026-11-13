@@ -1,12 +1,14 @@
 import {TestBed} from '@angular/core/testing';
 import {PerfTriggers} from './triggers';
 
+// #docregion fake
 /** jsdom has no IntersectionObserver, which `on viewport` needs. This one never fires. */
 class FakeIntersectionObserver {
   observe(): void {}
   unobserve(): void {}
   disconnect(): void {}
 }
+// #enddocregion fake
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -17,8 +19,10 @@ function loadedNames(element: HTMLElement): string[] {
 }
 
 describe('PerfTriggers', () => {
+  // #docregion stub
   beforeEach(() => vi.stubGlobal('IntersectionObserver', FakeIntersectionObserver));
   afterEach(() => vi.unstubAllGlobals());
+  // #enddocregion stub
 
   it('loads each block when its trigger fires', async () => {
     const fixture = TestBed.createComponent(PerfTriggers);

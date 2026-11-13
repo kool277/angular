@@ -1,7 +1,7 @@
+// #docregion fake-server
 import {Component, resource, signal} from '@angular/core';
 import {debounce, form, FormField, required, validateAsync} from '@angular/forms/signals';
 
-// #docregion fake-server
 const TAKEN_NAMES = ['admin', 'aziza'];
 
 /** Pretends to ask a server. The answer arrives after 50 ms. */
@@ -12,6 +12,7 @@ export function isUsernameTaken(name: string): Promise<boolean> {
 }
 // #enddocregion fake-server
 
+// #docregion component
 @Component({
   selector: 'app-forms-username',
   imports: [FormField],
@@ -27,7 +28,6 @@ export function isUsernameTaken(name: string): Promise<boolean> {
 export class FormsUsername {
   readonly nameModel = signal({username: ''});
 
-  // #docregion schema
   readonly nameForm = form(this.nameModel, (path) => {
     required(path.username);
     debounce(path.username, 200);
@@ -43,5 +43,5 @@ export class FormsUsername {
       onError: () => ({kind: 'checkFailed', message: 'Could not check the name.'}),
     });
   });
-  // #enddocregion schema
 }
+// #enddocregion component

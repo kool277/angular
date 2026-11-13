@@ -19,7 +19,7 @@ type Light = 'red' | 'yellow' | 'green';
       @default never;
     }
     <!-- #enddocregion switch -->
-    <button (click)="next()">Next light</button>
+    <button type="button" (click)="next()">Next light</button>
   `,
 })
 export class ControlFlowTrafficLight {

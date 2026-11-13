@@ -22,7 +22,7 @@ interface Message {
       }
     </ol>
     @if (messages.length > 0) {
-      <button (click)="deleteAll()">Delete all</button>
+      <button type="button" (click)="deleteAll()">Delete all</button>
     }
   `,
 })

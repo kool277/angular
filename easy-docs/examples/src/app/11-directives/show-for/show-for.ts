@@ -1,3 +1,4 @@
+// #docregion directive
 import {
   Component,
   Directive,
@@ -9,7 +10,6 @@ import {
   signal,
 } from '@angular/core';
 
-// #docregion directive
 @Directive({
   selector: '[appShowFor]',
 })
@@ -36,6 +36,7 @@ export class DirShowFor {
 }
 // #enddocregion directive
 
+// #docregion demo
 @Component({
   selector: 'app-show-for-demo',
   imports: [DirShowFor],
@@ -63,3 +64,4 @@ export class DirShowForDemo {
   readonly role = signal('editor');
   readonly ready = signal(true);
 }
+// #enddocregion demo

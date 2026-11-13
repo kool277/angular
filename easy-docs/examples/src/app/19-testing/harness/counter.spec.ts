@@ -1,7 +1,9 @@
+// #docregion imports
 import {TestbedHarnessEnvironment} from '@angular/cdk/testing/testbed';
 import {TestBed} from '@angular/core/testing';
 import {TestingTwoCounters} from './counter';
 import {TestingCounterHarness} from './counter-harness';
+// #enddocregion imports
 
 describe('TestingCounter with a harness', () => {
   // #docregion use

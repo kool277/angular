@@ -8,6 +8,8 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 ## A
 
 - **`AbortSignal`**: A browser object that says "this work is not needed anymore". A resource gives one to its loader so old work can stop. See [HTTP and async data](17-http-and-async-data.md#resource-any-async-work-as-signals).
+- **abstract class**: A class written with `abstract class Name {}`. You cannot create it with `new`; other classes can only extend it. Unlike an interface, it still exists when the app runs, so it can be a DI token. See [Services and dependency injection](14-services-and-dependency-injection.md#lightweight-injection-tokens).
+- **`Accept-Language` header**: The list of languages that the browser sends with each request, so a server can choose the language of the answer. See [Internationalization (i18n)](24-i18n.md#deploying-several-languages).
 - **accessibility (a11y)**: Making an app usable for everybody, also people who use a keyboard only, a screen reader or a screen magnifier. See [Accessibility and Angular Aria](22-accessibility-and-angular-aria.md#2-in-one-sentence).
 - **accessible name**: The text a screen reader says for an element, from its content, its `<label>`, `aria-label` or `aria-labelledby`. See [Accessibility and Angular Aria](22-accessibility-and-angular-aria.md#4-smallest-example).
 - **accordion**: A list of sections whose content opens and closes, each with a trigger button. See [Accessibility and Angular Aria](22-accessibility-and-angular-aria.md#accordion).
@@ -20,6 +22,7 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 - **Angular Aria**: The package `@angular/aria` with headless directives for accessible widgets such as tabs, accordions, listboxes, menus, trees and grids. See [Accessibility and Angular Aria](22-accessibility-and-angular-aria.md#angular-aria-headless-widgets).
 - **Angular CLI**: The `ng` command. It creates projects, generates code, serves, builds and tests the app. See [Install Angular and make your first app](02-install-and-first-app.md#step-2-install-the-angular-cli).
 - **Angular Elements**: The package `@angular/elements`; its `createCustomElement()` turns a component into a custom element. See [Smaller topics](27-smaller-topics.md#a-component-as-a-custom-element).
+- **Angular Material**: The Angular team's library of ready-made components (buttons, menus, dialogs), built on the CDK. See [Testing](19-testing.md#component-harnesses).
 - **AngularJS**: The older framework (version 1.x) that came before Angular. Code with `ng-controller` or `$scope` is AngularJS, not Angular. See [What Angular is](01-what-is-angular.md#angular-is-not-angularjs).
 - **`animate.enter` / `animate.leave`**: Template syntax that adds CSS classes while an element appears, or plays them and waits before Angular removes the element. With parentheses, `(animate.leave)="fn($event)"`, they call your function. See [Animations](23-animations.md#4-smallest-example).
 - **animation**: A change of how an element looks (place, size, color, transparency) that happens over a short time instead of at once. See [Animations](23-animations.md#2-in-one-sentence).
@@ -39,19 +42,26 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 
 ## B
 
+- **`beforeEach` / `afterEach`**: Vitest globals. `beforeEach(fn)` runs `fn` before every test in the `describe` group, `afterEach(fn)` after every test; use them for shared set-up and clean-up. See [Testing](19-testing.md#the-tools).
 - **binding**: A connection between the template and the class. Angular keeps the page in sync with it. See [Templates and binding](05-templates-and-binding.md#3-why-you-need-it).
 - **block**: A piece of template that starts with `@`, a name and sometimes a condition, followed by content in `{ }`. Blocks are not HTML elements and do not appear in the page. See [Control flow: @if, @for, @switch](06-control-flow.md#blocks).
 - **blocking / non-blocking resource**: A blocking route resource makes the router wait for the data before it opens the page; `nonBlocking(...)` opens the page at once and passes the whole resource. See [HTTP and async data](17-http-and-async-data.md#route-resources-load-the-data-of-a-page-with-the-router).
 - **body**: The data inside a request or response, for example the new tea sent with POST. See [HTTP and async data](17-http-and-async-data.md#sending-data-post).
 - **bootstrapping**: Starting the app. `bootstrapApplication(App, appConfig)` creates the root component and puts it into `index.html`. See [Install Angular and make your first app](02-install-and-first-app.md#how-the-app-starts).
+- **breakpoint**: The line where a debugger stops the code. See [Testing](19-testing.md#debugging-tests).
+- **browser provider**: A package, such as `@vitest/browser-playwright`, that starts a real browser for Vitest when you run `ng test --browsers=...`. See [Testing](19-testing.md#running-tests).
+- **bubble (event bubbling)**: Many DOM events, such as `click`, are also reported to the parent elements of the element where they happened, up to the top of the page. Custom events made with `output()` do not bubble. See [Inputs, outputs and model](08-inputs-outputs-model.md#outputs).
 - **budget**: A size limit in `angular.json`; the build warns or fails when a part of the app is too big. See [Build, configure, deploy and update](26-build-configure-deploy-update.md#budgets).
 - **build (production build)**: Turning the source code into the small files that users download. `ng build` writes them into `dist/`. See [Install Angular and make your first app](02-install-and-first-app.md#what-ng-build-does).
 - **build configuration**: A named set of settings, such as `production` or `development`, chosen with `--configuration`. See [Build, configure, deploy and update](26-build-configure-deploy-update.md#build-configurations).
+- **build server**: A computer that builds and tests your code each time a new version of it is saved, without a person watching. See [Testing](19-testing.md#running-tests).
 - **bundler**: A tool that joins many source files into a few small files for the browser. See [Install Angular and make your first app](02-install-and-first-app.md#3-why-you-need-it).
+- **`By`**: A helper from `@angular/platform-browser` for tests: `By.css('p')` finds elements by CSS selector, `By.directive(X)` finds elements that have the directive or component `X`. See [Testing](19-testing.md#testbed-and-componentfixture).
 
 ## C
 
 - **callback**: A function passed to another function, which calls it later, such as the arrow function in `items.map((item) => item.name)`. See [The TypeScript you need](03-typescript-you-need.md#arrow-functions).
+- **camelCase**: A way to write names of several words: the first word starts with a small letter, every next word with a capital letter, and there are no spaces (`fileSize`). Pipe names use it. See [Pipes](10-pipes.md#writing-your-own-pipe).
 - **`cdkDropList` / `cdkDrag`**: CDK directives for a list that accepts dropped items and for an item that can be dragged. See [Smaller topics](27-smaller-topics.md#drag-and-drop-with-the-cdk).
 - **CDN**: A network of servers around the world that sends files from a place near the user. See [Build, configure, deploy and update](26-build-configure-deploy-update.md#deploying-a-static-app).
 - **CDN (content delivery network)**: A network of servers that deliver files such as images and scripts quickly to users around the world. See [Performance, @defer and zoneless](20-performance-defer-and-zoneless.md#ngoptimizedimage-images-in-the-right-order-and-size).
@@ -66,9 +76,10 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 - **CLS (Cumulative Layout Shift)**: How much the page jumps while it loads, for example when an image arrives and pushes text down. See [Performance, @defer and zoneless](20-performance-defer-and-zoneless.md#3-why-you-need-it).
 - **code coverage**: A report of which lines of code the tests ran (`ng test --coverage`). See [Testing](19-testing.md#code-coverage).
 - **cold Observable**: An Observable that does nothing until someone subscribes, and starts again for each subscriber. `HttpClient` returns cold Observables. See [HTTP and async data](17-http-and-async-data.md#httpclient-requests-in-a-service).
+- **commit**: One saved version of your files in Git. See [Build, configure, deploy and update](26-build-configure-deploy-update.md#updating-angular).
 - **compiler**: A program that reads code and writes other code. The TypeScript compiler checks types and turns `.ts` files into JavaScript. See [The TypeScript you need](03-typescript-you-need.md#5-how-it-works).
 - **component**: One part of the screen. It has a template (HTML), a class (TypeScript) and a selector (its tag name). See [What Angular is](01-what-is-angular.md#a-component-is-template-plus-class).
-- **Component Dev Kit (CDK)**: The package `@angular/cdk` with building blocks such as drag and drop, without a visual design. See [Smaller topics](27-smaller-topics.md#drag-and-drop-with-the-cdk).
+- **Component Dev Kit (CDK)**: The package `@angular/cdk` with building blocks such as drag and drop, without a visual design. See [Testing](19-testing.md#component-harnesses).
 - **component harness**: A class from `@angular/cdk/testing` that knows how to use one component, so tests call methods like `increment()` instead of searching the HTML. See [Testing](19-testing.md#component-harnesses).
 - **component input binding**: The router feature `withComponentInputBinding()`. It writes route parameters, query parameters and route data into inputs with the same name. See [Routing](15-routing.md#route-parameters-one-route-for-many-pages).
 - **component tree**: The structure of an app: the root component uses child components, which use their own children. See [What Angular is](01-what-is-angular.md#an-app-is-a-tree-of-components).
@@ -78,13 +89,16 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 - **content projection**: Putting HTML that a parent writes between a component's tags into a place in the component's template. See [Content projection and queries](12-content-projection-and-queries.md#2-in-one-sentence).
 - **Content Security Policy (CSP)**: Rules the server sends in a header that tell the browser which scripts and styles it may run. See [Security](25-security.md#content-security-policy-csp).
 - **control flow block**: A part of a template that starts with `@` (`@if`, `@for`, `@switch`) and decides which content Angular puts into the page. See [Control flow: @if, @for, @switch](06-control-flow.md#2-in-one-sentence).
+- **cookie**: A small piece of text that a site stores in the browser. The browser sends it back with every request to that site, which is why CSRF attacks work. See [Security](25-security.md#attacks-through-http).
 - **Core Web Vitals**: Measurements by Google of how fast and stable a page feels, for example LCP and CLS. See [Performance, @defer and zoneless](20-performance-defer-and-zoneless.md#3-why-you-need-it).
+- **CORS (Cross-Origin Resource Sharing)**: The rules that decide whether a page from one domain may call an API on another domain; the API server must allow it with special headers. See [Build, configure, deploy and update](26-build-configure-deploy-update.md#deploying-a-static-app).
 - **crawler**: A program of a search engine that reads web pages to put them into the search results. See [Server rendering and hydration](21-server-rendering-and-hydration.md#3-why-you-need-it).
 - **cross-field validation**: A rule on one field that also reads another field, for example "the two passwords are the same". See [Forms](16-forms.md#cross-field-validation-two-passwords).
 - **cross-site request forgery (CSRF, XSRF)**: An attack where another site sends requests to your server with the user's cookies. `HttpClient` helps by copying the `XSRF-TOKEN` cookie into a header. See [Security](25-security.md#attacks-through-http).
 - **cross-site script inclusion (XSSI)**: An old attack that loads a JSON API as a script; `HttpClient` removes the protective `)]}',` prefix. See [Security](25-security.md#attacks-through-http).
 - **cross-site scripting (XSS)**: An attack where someone gets their own JavaScript to run in your page. See [Security](25-security.md#3-why-you-need-it).
 - **CSS custom property**: A CSS variable such as `--i`, set with `[style.--i]` and read with `var(--i)`. See [Animations](23-animations.md#6-a-realistic-example).
+- **CSS reset**: A set of global CSS rules that removes the browser's own default margins and styles, so that every browser starts the same. See [Styling components](09-styling.md#global-styles).
 - **CSS transition**: A CSS feature that animates a property from its old value to its new value when it changes, such as `transition: opacity 300ms`. See [Animations](23-animations.md#two-kinds-of-css-animation).
 - **custom control**: Your own component that works with `[formField]`, because it has a `value` model (`FormValueControl`) or a `checked` model (`FormCheckboxControl`). See [Forms](16-forms.md#custom-controls).
 - **custom element (web component)**: An HTML tag defined with JavaScript through a browser standard; Angular Elements makes one from a component. See [Smaller topics](27-smaller-topics.md#a-component-as-a-custom-element).
@@ -93,8 +107,11 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 
 ## D
 
+- **`data:` URL**: A file, such as a small image, written as text directly in an attribute, for example `data:image/png;base64,...`. See [Performance, @defer and zoneless](20-performance-defer-and-zoneless.md#ngoptimizedimage-images-in-the-right-order-and-size).
 - **`debounceTime`**: An RxJS operator that waits until values have stopped for a given time, then sends the last one. See [RxJS interop](18-rxjs-interop.md#signals-and-rxjs-together-a-search-box).
 - **debouncing**: Waiting until a value has stopped changing for some time before you react to it. Angular's `debounced` does this for signals (experimental). See [Signals](07-signals.md#debounced-wait-until-a-value-stops-changing).
+- **`DebugElement`**: Angular's wrapper around an element in a test (`fixture.debugElement`). Its `query(By.css(...))` finds child elements; `.nativeElement` is the real element. See [Testing](19-testing.md#testbed-and-componentfixture).
+- **debugger**: A tool that stops the code at a line you choose and shows the values of all variables there. See [Testing](19-testing.md#debugging-tests).
 - **decorator**: A label that starts with `@` and sits above a class, such as `@Component({...})`. It is a function that attaches extra information to the class. See [What Angular is](01-what-is-angular.md#4-smallest-example).
 - **decorator input/output (`@Input`, `@Output`)**: The older way to declare inputs and outputs with decorators on class fields and `EventEmitter`. See [Inputs, outputs and model](08-inputs-outputs-model.md#in-older-code-input-and-output).
 - **default value**: A value a parameter gets when the caller leaves it out, such as `times = 2`. See [The TypeScript you need](03-typescript-you-need.md#optional-properties-and-parameters).
@@ -109,13 +126,16 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 - **deprecated**: Still works, but will be removed in a later major version; new code should use the replacement. See [Animations](23-animations.md#in-older-code-the-angularanimations-package).
 - **`describe` / `it`**: `describe` names a group of tests; `it` is one test. Both are Vitest globals. See [Testing](19-testing.md#4-smallest-example).
 - **`DestroyRef`**: An object from `inject(DestroyRef)` whose `onDestroy(fn)` runs `fn` when the component, directive or service is destroyed. See [Lifecycle](13-lifecycle.md#ngondestroy-and-destroyref).
+- **destructuring**: Taking properties out of an object into variables of the same name: `({queryParams}) => ...` or `const {email} = value`. It is a short form of `(info) => info.queryParams`. See [Routing](15-routing.md#redirects-and-the-wildcard-route).
 - **developer preview**: An Angular feature that works but whose details may still change before it becomes stable. See [Control flow: @if, @for, @switch](06-control-flow.md#boundary-stop-one-broken-part-from-breaking-the-page).
 - **development server**: A small web server on your own computer that shows the app while you work and reloads it when you save a file. `ng serve` starts it. See [Install Angular and make your first app](02-install-and-first-app.md#what-ng-serve-does).
 - **directive**: A class that adds behavior to an element, such as `NgTemplateOutlet`. Like components, directives go into `imports`. See [Templates and binding](05-templates-and-binding.md#ng-container-and-ng-template) and [Directives](11-directives.md).
 - **directive composition API / host directive**: `hostDirectives` in `@Component` or `@Directive` puts other directives on the host element. Their inputs and outputs stay hidden unless listed. See [Directives](11-directives.md#directive-composition-hostdirectives).
 - **dirty**: A field is dirty after the user has changed its value at least once. The opposite is pristine. See [Forms](16-forms.md#a-field-and-its-state).
 - **disabled reason**: A text that explains why a field is disabled. A `disabled` rule returns it instead of `true`. See [Forms](16-forms.md#hidden-disabled-and-read-only-fields).
+- **DOM (Document Object Model)**: The tree of element objects that the browser builds from a page. JavaScript, and Angular, read and change the page through it. See [Components](04-components.md#the-host-element-and-the-view).
 - **DOM property**: A property of an element object in the browser, such as `disabled`, `value` or `readOnly`. Its name can differ from the HTML attribute name. See [Templates and binding](05-templates-and-binding.md#property-binding).
+- **domain**: The name part of a web address, such as `museum.example`. See [Build, configure, deploy and update](26-build-configure-deploy-update.md#deploying-a-static-app).
 - **`DomSanitizer`**: The service from `@angular/platform-browser` that cleans values with `sanitize()` or marks them as trusted with `bypassSecurityTrust...` methods. See [Security](25-security.md#trusting-a-value-on-purpose-domsanitizer).
 - **duration / delay / easing**: How long an animation lasts, how long it waits before it starts, and its speed curve (such as `ease-out`). See [Animations](23-animations.md#two-kinds-of-css-animation).
 
@@ -127,6 +147,7 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 - **`ElementRef`**: An object that holds a real DOM element in its `nativeElement` property. Get it with `inject(ElementRef)`. See [Directives](11-directives.md#when-you-need-the-real-element-elementref).
 - **embedded view**: A piece of page that Angular creates from an `<ng-template>`, for example with `createEmbeddedView`. See [Directives](11-directives.md#structural-directives).
 - **`@empty`**: A block after `@for` that is shown when the list has no items. See [Control flow: @if, @for, @switch](06-control-flow.md#empty).
+- **end-to-end test**: A test that starts the whole app in a real browser and clicks through it like a user. See [Testing](19-testing.md#component-harnesses).
 - **entry point**: The first code that runs when the app starts. In an Angular app it is `src/main.ts`. See [Install Angular and make your first app](02-install-and-first-app.md#how-the-app-starts).
 - **environment file**: A file such as `environment.ts` with settings that differ between builds; it is public. See [Build, configure, deploy and update](26-build-configure-deploy-update.md#4-smallest-example).
 - **error boundary**: A `@boundary` block around a part of a template. If something inside throws an error, Angular shows the `@error` block instead and the rest of the page keeps working. Developer preview. See [Control flow: @if, @for, @switch](06-control-flow.md#boundary-stop-one-broken-part-from-breaking-the-page).
@@ -136,19 +157,22 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 - **experimental**: An Angular API that you can try but that may change or be removed. See [Signals](07-signals.md#debounced-wait-until-a-value-stops-changing).
 - **export / import**: `export` makes a name usable by other files; `import { name } from './file'` uses it. See [The TypeScript you need](03-typescript-you-need.md#import-and-export).
 - **`exportAs` name**: The name under which a directive can be put into a template variable, as in `#delivery="ngAccordionPanel"`. See [Accessibility and Angular Aria](22-accessibility-and-angular-aria.md#accordion).
+- **Express**: A popular library for web servers in Node.js; the server that `ng add @angular/ssr` creates uses it. See [Server rendering and hydration](21-server-rendering-and-hydration.md#adding-ssr-to-an-app).
 - **extends / override**: `extends` makes a class build on another class; `override` marks a method that replaces the parent's version. See [The TypeScript you need](03-typescript-you-need.md#readonly-private-and-protected).
 
 ## F
 
-- **fake timers**: Vitest's replacement clock (`vi.useFakeTimers()`): time moves only when the test calls `vi.advanceTimersByTimeAsync(ms)`. See [Testing](19-testing.md#timers-fake-time).
+- **fake timers**: (existing entry; first use is now explained earlier) Vitest's replacement clock (`vi.useFakeTimers()`): time moves only when the test calls `vi.advanceTimersByTime(ms)` or `await vi.advanceTimersByTimeAsync(ms)`. First explained in [RxJS interop](18-rxjs-interop.md#observables-in-two-minutes); in depth in [Testing](19-testing.md#timers-fake-time).
 - **`fakeAsync`**: An older zone.js helper that runs a test with a fake clock (`tick`, `flush`). Experimental in Angular 22 and no longer recommended. See [Testing](19-testing.md#in-older-projects-karma-jasmine-and-zonejs-helpers).
 - **fallback content**: Content written inside `<ng-content>` that is shown when the parent gives nothing for that slot. See [Content projection and queries](12-content-projection-and-queries.md#fallback-content).
+- **fetch**: The browser's own function for sending HTTP requests. Angular's `HttpClient` uses it by default. See [HTTP and async data](17-http-and-async-data.md#resource-any-async-work-as-signals).
 - **field**: A variable that belongs to a class, such as `likes = 0;`. A component's template can show its fields. See [What Angular is](01-what-is-angular.md#6-a-realistic-example).
 - **field metadata**: Extra information that a schema attaches to a field, read with `field().metadata(key)`. See [Forms](16-forms.md#field-metadata).
 - **field state**: What you get when you call a field, such as `signupForm.email()`: signals like `value()`, `valid()`, `errors()`, `touched()` and `dirty()`. See [Forms](16-forms.md#a-field-and-its-state).
 - **field tree**: The object that `form()` returns: a field for the whole form, with a field for every property inside it. See [Forms](16-forms.md#model-form-and-field).
 - **file replacement**: A build setting that swaps one source file for another, used for environment files. See [Build, configure, deploy and update](26-build-configure-deploy-update.md#4-smallest-example).
 - **fill mode**: `NgOptimizedImage` with the `fill` attribute: the image fills its positioned parent element, like a background picture. See [Performance, @defer and zoneless](20-performance-defer-and-zoneless.md#ngoptimizedimage-images-in-the-right-order-and-size).
+- **fire (an event)**: An element "fires" an event when the event happens on it, for example a button fires `click` when it is clicked. See [Templates and binding](05-templates-and-binding.md#event-binding).
 - **fixture (`ComponentFixture`)**: The handle that `TestBed.createComponent` returns: the component instance, its HTML and `whenStable()`. See [Testing](19-testing.md#testbed-and-componentfixture).
 - **focus**: The element that receives keyboard input right now. See [Accessibility and Angular Aria](22-accessibility-and-angular-aria.md#focus-and-live-regions).
 - **form model**: The writable signal that holds the data of a Signal Form, such as `signal({ email: '' })`. Typing in the inputs changes it. See [Forms](16-forms.md#model-form-and-field).
@@ -160,6 +184,9 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 
 - **generic**: A type or function that takes a type as a parameter in `< >`, such as `Array<string>` or `signal<number>(0)`. See [The TypeScript you need](03-typescript-you-need.md#generics).
 - **GET / POST**: HTTP methods. GET asks for data; POST sends new data to save. PUT, PATCH and DELETE replace, change and remove data. See [HTTP and async data](17-http-and-async-data.md#sending-data-post).
+- **getter**: A method written with `get` (`get hasListeners()`). Other code reads it like a field, without `()`, but the function runs on every read. See [RxJS interop](18-rxjs-interop.md#takeuntildestroyed-stop-a-subscription-with-the-component).
+- **Git**: A tool that saves versions of your files, so you can see and undo changes; `ng new` sets it up. See [Build, configure, deploy and update](26-build-configure-deploy-update.md#updating-angular).
+- **global (in tests)**: A name you can use without an import. In Vitest tests, `describe`, `it`, `expect` and `vi` are globals. See [RxJS interop](18-rxjs-interop.md#observables-in-two-minutes).
 - **global event target**: The prefixes `document:`, `window:` and `body:` in a host listener, such as `'(document:click)'`, which listen on the whole page instead of the host element. See [Directives](11-directives.md#6-a-realistic-example).
 - **global styles**: CSS in `src/styles.css` that applies to the whole app. See [Styling components](09-styling.md#global-styles).
 - **guard**: A function the router calls before it opens, leaves or matches a route (`CanActivateFn`, `CanDeactivateFn`, `CanMatchFn`, `CanActivateChildFn`). It allows, blocks or redirects. See [Routing](15-routing.md#guards-who-may-open-or-leave-a-page).
@@ -188,11 +215,13 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 - **`i18n` attribute**: Marks the text of an element for translation; `i18n-title` and similar mark an attribute. See [Internationalization (i18n)](24-i18n.md#4-smallest-example).
 - **ICU expression**: A text with cases, such as `{count, plural, =0 {...} other {...}}` or `{kind, select, ...}`. See [Internationalization (i18n)](24-i18n.md#plural-and-select-icu-expressions).
 - **image loader**: A function that builds the URL of an image for an image server, given the source and the wanted width. Provided with `IMAGE_LOADER`. See [Performance, @defer and zoneless](20-performance-defer-and-zoneless.md#6-a-realistic-example).
+- **implements**: `class X implements SomeInterface` promises that the class has everything the interface asks for. TypeScript checks the promise and shows an error if a method is missing or wrong. See [Pipes](10-pipes.md#writing-your-own-pipe).
 - **implicit variable**: A ready-made name inside `@for`, such as `$index`, `$count`, `$first`, `$last`, `$even` and `$odd`. Also called contextual variable. See [Control flow: @if, @for, @switch](06-control-flow.md#implicit-variables).
 - **`$implicit`**: The key in a template's context object whose value `let-x` receives when no other name is given. See [Directives](11-directives.md#structural-directives).
 - **imports (in @Component)**: The list of components, directives and pipes that a component's template may use. See [Components](04-components.md#using-a-component).
 - **impure pipe**: A pipe with `pure: false` that runs on every check of the component. Slower; avoid it. See [Pipes](10-pipes.md#pure-and-impure-pipes).
 - **incremental hydration**: Hydrating parts of a server-rendered page later, when a `hydrate` trigger of a `@defer` block fires. See [Server rendering and hydration](21-server-rendering-and-hydration.md#incremental-hydration-hydrate-triggers).
+- **`inert`**: An HTML attribute that makes an element and its children unreachable for the mouse, the keyboard and screen readers. See [Accessibility and Angular Aria](22-accessibility-and-angular-aria.md#tabs).
 - **`inject()`**: The function that asks the current injector for a dependency. Works only in an injection context. See [Services and dependency injection](14-services-and-dependency-injection.md#where-inject-works-the-injection-context).
 - **`@Injectable`**: The older, more flexible decorator for services. With `providedIn: 'root'` it works like `@Service()`. See [Services and dependency injection](14-services-and-dependency-injection.md#service-and-injectable-providedin-root-).
 - **`injectAsync`**: Loads a service's code only the first time it is needed and returns a function that gives a `Promise` of the service. See [Services and dependency injection](14-services-and-dependency-injection.md#loading-a-service-only-when-it-is-needed).
@@ -205,6 +234,7 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 - **interface**: A description of the shape of an object: its properties and their types. It produces no JavaScript. See [The TypeScript you need](03-typescript-you-need.md#interfaces-and-type-aliases).
 - **interface (lifecycle)**: A TypeScript type such as `OnInit` that a class promises to follow with `implements`, so TypeScript catches a misspelled hook name. See [Lifecycle](13-lifecycle.md#4-smallest-example).
 - **internationalization (i18n)**: Preparing an app so that it can show texts and formats for different languages and regions. See [Internationalization (i18n)](24-i18n.md#2-in-one-sentence).
+- **`IntersectionObserver`**: A browser feature that tells code when an element becomes visible on the screen; `@defer (on viewport)` uses it. See [Performance, @defer and zoneless](20-performance-defer-and-zoneless.md#triggers-when-the-block-loads).
 - **`isDevMode()`**: Returns `true` in development builds and tests, `false` in production builds. See [Build, configure, deploy and update](26-build-configure-deploy-update.md#4-smallest-example).
 - **`isPlatformBrowser` / `isPlatformServer`**: Functions from `@angular/common` that take `PLATFORM_ID` and tell whether code runs in the browser or on the server. See [Server rendering and hydration](21-server-rendering-and-hydration.md#code-that-only-works-in-the-browser).
 
@@ -221,6 +251,8 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 
 ## L
 
+- **landmark**: One of the main areas of a page, such as the banner, the navigation, the main content or the footer. Screen reader users can jump from one landmark to the next. See [Components](04-components.md#6-a-realistic-example).
+- **lazy chunk**: A file of JavaScript that the browser loads only when it is needed; `ng build` lists them under `Lazy chunk files`. See [Performance, @defer and zoneless](20-performance-defer-and-zoneless.md#4-smallest-example).
 - **lazy loading**: Downloading a page's code only when the user opens it, with `loadComponent` or `loadChildren`. See [Routing](15-routing.md#lazy-loading-load-a-page-only-when-it-is-needed).
 - **LCP (Largest Contentful Paint)**: The time until the biggest element on the screen, often a photo or a heading, is shown. See [Performance, @defer and zoneless](20-performance-defer-and-zoneless.md#3-why-you-need-it).
 - **LCP image**: The largest image on the first screen of a page. Mark it with `priority` so it loads first. See [Performance, @defer and zoneless](20-performance-defer-and-zoneless.md#ngoptimizedimage-images-in-the-right-order-and-size).
@@ -239,6 +271,7 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 - **localization**: Building the version of an app for one language and region. See [Internationalization (i18n)](24-i18n.md#2-in-one-sentence).
 - **`$localize`**: A tagged template, written `` $localize`text` ``, that marks a text in TypeScript code for translation. See [Internationalization (i18n)](24-i18n.md#4-smallest-example).
 - **locator**: The first argument of a query: a template reference variable name such as `'box'`, or a component or directive class. See [Content projection and queries](12-content-projection-and-queries.md#queries-find-things-in-the-view).
+- **login token**: A secret text that a server gives the user after login. Later requests send it, usually in the header `Authorization: Bearer <token>`, so the server knows who asks. `Bearer` is the fixed word in front of it. See [HTTP and async data](17-http-and-async-data.md#interceptors-code-that-runs-for-every-request).
 - **long-term support (LTS)**: The second year of support of a major version, with only critical and security fixes. See [Build, configure, deploy and update](26-build-configure-deploy-update.md#updating-angular).
 
 ## M
@@ -246,6 +279,7 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 - **matcher**: The method after `expect(x)`, such as `toBe`, `toEqual` or `toHaveBeenCalledWith`. See [Testing](19-testing.md#matchers).
 - **matrix parameter**: A rare optional value that belongs to one part of the path, written with `;`, such as `/products;view=grid`. See [Routing](15-routing.md#query-parameters-optional-settings-in-the-url).
 - **meaning / description (i18n)**: Notes for the translator in `i18n="meaning|description@@id"`; a meaning also separates texts that look the same. See [Internationalization (i18n)](24-i18n.md#marking-text-and-its-metadata).
+- **member**: A field or a method of a class. See [The TypeScript you need](03-typescript-you-need.md#readonly-private-and-protected).
 - **metadata**: The settings object passed to a decorator, such as `selector`, `template` and `imports` in `@Component({...})`. See [Components](04-components.md#4-smallest-example).
 - **method**: A function that belongs to a class, such as `like() { ... }`. See [What Angular is](01-what-is-angular.md#6-a-realistic-example).
 - **microsyntax**: The small language after `*name=` on a structural directive, for example `['admin']; role: role()`. Angular turns each part into an input. See [Directives](11-directives.md#structural-directives).
@@ -264,6 +298,7 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 - **`::ng-deep`**: A deprecated CSS selector part that turns off encapsulation for the rest of a selector. See [Styling components](09-styling.md#ng-deep-only-in-older-code).
 - **`NgClass` / `NgStyle`**: Older built-in attribute directives that set classes and styles. New code uses `[class]` and `[style]` bindings. See [Directives](11-directives.md#in-older-code-ngclass-ngstyle-and-ngif).
 - **NgComponentOutlet**: A directive from `@angular/common` that shows a component class chosen in code. See [Templates and binding](05-templates-and-binding.md#choosing-a-component-while-the-app-runs).
+- **Nginx and Apache**: Two popular web servers. See [Internationalization (i18n)](24-i18n.md#deploying-several-languages).
 - **NgModule**: A class with `@NgModule` that groups components, directives and pipes with `declarations`, `imports` and `exports`; the older alternative to standalone components. See [Smaller topics](27-smaller-topics.md#reading-ngmodules-in-older-code).
 - **`ngOnChanges` / `SimpleChanges`**: `ngOnChanges` runs each time an input changes and gets a `SimpleChanges` object with `previousValue`, `currentValue` and `firstChange` for each changed input. See [Lifecycle](13-lifecycle.md#ngonchanges-react-to-input-changes).
 - **`ngOnDestroy`**: Runs once, right before Angular removes a component or directive. See [Lifecycle](13-lifecycle.md#ngondestroy-and-destroyref).
@@ -277,12 +312,14 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 - **npm**: The Node package manager. It downloads packages and comes with Node.js. See [Install Angular and make your first app](02-install-and-first-app.md#step-1-install-nodejs).
 - **npm script**: A short name for a command, defined in `package.json`. `npm start` runs `ng serve`. See [Install Angular and make your first app](02-install-and-first-app.md#the-files-that-ng-new-created).
 - **nullish coalescing (`??`)**: `a ?? b` gives `b` if `a` is `null` or `undefined`, otherwise `a`. See [The TypeScript you need](03-typescript-you-need.md#optional-properties-and-parameters).
+- **numeric separator**: The `_` inside a number such as `3_450_000`. It only makes the number easier to read; `3_450_000` is the same as `3450000`. See [Pipes](10-pipes.md#6-a-realistic-example).
 
 ## O
 
 - **Observable**: A stream of values from the RxJS library. The `async` pipe can show its latest value. See [Pipes](10-pipes.md#async-values-that-arrive-later).
 - **`OnPush` / `Eager`**: Change detection strategies. `OnPush` (the default) checks a component only when its inputs, template events or signals changed; `Eager` checks it every time. See [Performance, @defer and zoneless](20-performance-defer-and-zoneless.md#onpush-check-only-the-components-that-changed).
 - **operator**: A function such as `map`, `filter`, `debounceTime` or `switchMap` that makes a new Observable from an old one. You chain operators with `pipe`. See [RxJS interop](18-rxjs-interop.md#observables-in-two-minutes).
+- **option (command-line option)**: A word after a command that starts with `--` and changes what the command does, such as `--style=css` in `ng new`. See [Install Angular and make your first app](02-install-and-first-app.md#step-3-create-a-project).
 - **optional (`?`)**: A property or parameter that may be left out. Its type includes `undefined`. See [The TypeScript you need](03-typescript-you-need.md#optional-properties-and-parameters).
 - **optional chaining (`?.`)**: `a?.b` gives `undefined` if `a` is `null` or `undefined`, otherwise `a.b`. See [The TypeScript you need](03-typescript-you-need.md#strict-null-checks-and-the--and--operators).
 - **output**: A custom event of a child component, declared with `output<T>()` and fired with `emit(value)`. See [Inputs, outputs and model](08-inputs-outputs-model.md#outputs).
@@ -292,6 +329,7 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 ## P
 
 - **package**: A ready-made code library that npm downloads, such as `@angular/core`. See [Install Angular and make your first app](02-install-and-first-app.md#step-1-install-nodejs).
+- **PascalCase**: Like camelCase, but the first word starts with a capital letter too (`FileSizePipe`). Class names use it. See [Pipes](10-pipes.md#writing-your-own-pipe).
 - **path**: The part of a URL after the domain, such as `about` in `https://shop.uz/about`. In a route it is written without a leading `/`. See [Routing](15-routing.md#3-why-you-need-it).
 - **`pathMatch`**: Says if a route path must match the start of the URL (`'prefix'`, the default) or the whole URL (`'full'`). See [Routing](15-routing.md#redirects-and-the-wildcard-route).
 - **`PendingTasks`**: A service that tells Angular to wait (stay not stable) until some async work is done, for example before the server sends the page. See [Server rendering and hydration](21-server-rendering-and-hydration.md#waiting-for-data-and-transfer-state).
@@ -300,8 +338,10 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 - **placeholder (i18n)**: The mark that stands for an interpolation or element inside a text to translate, such as `<x id="INTERPOLATION"/>`. See [Internationalization (i18n)](24-i18n.md#4-smallest-example).
 - **`@placeholder` / `@loading` / `@error`**: Sub-blocks of `@defer` that show content before the trigger fires, while the chunk downloads, and when the download fails. See [Performance, @defer and zoneless](20-performance-defer-and-zoneless.md#the-sub-blocks-and-their-timing-options).
 - **platform**: The environment an Angular app runs in, for example the browser or the server. `PLATFORM_ID` tells code which one it is. See [Server rendering and hydration](21-server-rendering-and-hydration.md#4-smallest-example).
-- **polyfill**: Code loaded before the app that adds something the app needs, such as `@angular/localize/init` for `$localize`. See [Internationalization (i18n)](24-i18n.md#4-smallest-example).
+- **plugin**: An extra part that a tool loads and runs. Tailwind is a plugin for PostCSS. See [Styling components](09-styling.md#tailwind-css).
+- **polyfill**: Code loaded before the app that adds something the app needs, such as `@angular/localize/init` for `$localize`. See [Performance, @defer and zoneless](20-performance-defer-and-zoneless.md#onpush-check-only-the-components-that-changed).
 - **port**: A number that tells which program on a computer should answer a web request. `ng serve` uses port 4200 by default. See [Install Angular and make your first app](02-install-and-first-app.md#step-4-start-the-development-server).
+- **PostCSS**: A tool that changes CSS files during the build. Tailwind CSS works through it. See [Styling components](09-styling.md#tailwind-css).
 - **`prefers-reduced-motion`**: A CSS media query that is true when the user asked the operating system for less motion. See [Animations](23-animations.md#respect-reduce-motion).
 - **prefetching**: Downloading code before it is needed, so that it is ready at once later. In `@defer` you write `prefetch on ...`. See [Performance, @defer and zoneless](20-performance-defer-and-zoneless.md#prefetching-download-early-show-later).
 - **private**: A word that makes a class member usable only inside the class. In components, use it for members that only the class code needs. See [The TypeScript you need](03-typescript-you-need.md#readonly-private-and-protected).
@@ -328,11 +368,14 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 - **reactivity**: Automatic updating of the page and of calculated values when the data they depend on changes. See [Signals](07-signals.md#3-why-you-need-it).
 - **readonly**: A word that makes a field unchangeable after it got its first value. See [The TypeScript you need](03-typescript-you-need.md#readonly-private-and-protected).
 - **redirect**: A route with `redirectTo` that sends the user to another URL instead of showing a component. See [Routing](15-routing.md#redirects-and-the-wildcard-route).
+- **regular expression**: A pattern for text, such as `/^[A-Za-z0-9_-]{11}$/` ("exactly 11 letters, digits, `-` or `_`"). See [Security](25-security.md#6-a-realistic-example).
 - **relative link**: A link path without `/` at the start. It starts from the route of the component that contains the link. See [Routing](15-routing.md#routerlink-links-inside-the-app).
 - **`reload()`**: Runs a resource's loader again with the same params. The old value stays visible while it reloads. See [HTTP and async data](17-http-and-async-data.md#resource-any-async-work-as-signals).
+- **render**: Create the HTML elements that a template describes and put them into the page. Angular renders a component's template inside its host element. See [Components](04-components.md#the-host-element-and-the-view).
 - **render callback**: A function given to `afterNextRender` or `afterEveryRender`. Angular calls it after it has written all components to the DOM. Only in the browser. See [Lifecycle](13-lifecycle.md#afternextrender-and-aftereveryrender).
 - **`renderApplication`**: A function from `@angular/platform-server` that starts an app on the server and returns the finished HTML as a string. See [Server rendering and hydration](21-server-rendering-and-hydration.md#4-smallest-example).
 - **request**: A message from the app to the server, such as "give me the teas" (GET) or "save this tea" (POST). See [HTTP and async data](17-http-and-async-data.md#3-why-you-need-it).
+- **`requestIdleCallback`**: A browser function that runs code when the browser is not busy; `@defer (on idle)` uses it. See [Performance, @defer and zoneless](20-performance-defer-and-zoneless.md#triggers-when-the-block-loads).
 - **required input**: An input that every parent must set, declared with `input.required<T>()`. The build fails if it is missing. See [Inputs, outputs and model](08-inputs-outputs-model.md#inputs).
 - **required query**: `viewChild.required` or `contentChild.required`. Its type has no `undefined`, and reading it throws NG0951 when nothing is found. See [Content projection and queries](12-content-projection-and-queries.md#queries-find-things-in-the-view).
 - **resolution modifiers**: The `inject()` options `optional`, `self`, `skipSelf` and `host`, which change where Angular looks and what happens when nothing is found. See [Services and dependency injection](14-services-and-dependency-injection.md#changing-where-inject-looks).
@@ -362,6 +405,7 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 
 - **sanitizing**: Checking a value and removing or changing the parts that are not safe where it goes. See [Security](25-security.md#4-smallest-example).
 - **schema (forms)**: The rules of a form: the function you pass to `form()`, or a reusable object made with `schema()`. See [Forms](16-forms.md#model-form-and-field).
+- **schematic**: A script for the Angular CLI that creates or changes files in your project, for example the code behind `ng generate` and `ng update` migrations. See [Testing](19-testing.md#in-older-projects-karma-jasmine-and-zonejs-helpers).
 - **screen reader**: A program that reads the page aloud and tells what each element is, for blind and low-vision users. See [Accessibility and Angular Aria](22-accessibility-and-angular-aria.md#3-why-you-need-it).
 - **security context**: The kind of place a value goes (HTML, style, URL, resource URL); it decides how Angular checks the value. See [Security](25-security.md#angular-trusts-templates-not-values).
 - **selector**: The tag name (or other CSS selector) that places a component on the page, such as `app-hello` in `<app-hello />`. See [What Angular is](01-what-is-angular.md#4-smallest-example).
@@ -371,6 +415,7 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 - **SEO (search engine optimization)**: Making pages easy for search engines to read and rank well. See [Server rendering and hydration](21-server-rendering-and-hydration.md#3-why-you-need-it).
 - **server (backend)**: The program on another computer that stores the data and answers requests. See [HTTP and async data](17-http-and-async-data.md#3-why-you-need-it).
 - **server-side rendering (SSR)**: Running the Angular app on a server for each request, so the browser receives finished HTML. See [Server rendering and hydration](21-server-rendering-and-hydration.md#5-how-it-works).
+- **server-side request forgery (SSRF)**: Tricks that make a server send requests to places it should not; Angular's SSR server answers only host names listed in `security.allowedHosts`. See [Security](25-security.md#attacks-through-http).
 - **service**: A shared helper object that components ask Angular for, for example to load data. See [What Angular is](01-what-is-angular.md#angular-at-a-glance).
 - **service worker**: A script the browser keeps after the tab closes; Angular's caches the app's files so it can start offline. See [Smaller topics](27-smaller-topics.md#service-workers).
 - **Shadow DOM**: A browser feature that puts an element's content and CSS into a separate, hidden tree. See [Styling components](09-styling.md#view-encapsulation).
@@ -382,12 +427,15 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 - **snapshot (route)**: A picture of the route at one moment (`route.snapshot`). It does not change later. See [Routing](15-routing.md#another-way-activatedroute).
 - **source locale**: The language you write your templates in; `en-US` unless `angular.json` says otherwise. See [Internationalization (i18n)](24-i18n.md#the-locale-and-locale-aware-pipes).
 - **spec file**: A `.spec.ts` file with the tests for the file of the same name. See [Testing](19-testing.md#the-tools).
-- **spy**: A function that records its calls, made with `vi.fn()` or `vi.spyOn(object, 'method')`. See [Testing](19-testing.md#fakes-and-spies).
+- **spread syntax (`...`)**: JavaScript syntax that copies all items of an array or all properties of an object into a new one: `[...list, x]`, `{...task, status}`. See [Control flow: @if, @for, @switch](06-control-flow.md#6-a-realistic-example).
+- **spy**: (existing entry; first use is now in chapter 18's exercise) A function that records its calls, made with `vi.fn()` or `vi.spyOn(object, 'method')`. Briefly in [RxJS interop](18-rxjs-interop.md#8-try-it-yourself); in depth in [Testing](19-testing.md#fakes-and-spies).
 - **`srcset`**: An `<img>` attribute with a list of image files of different sizes, from which the browser picks the best one. See [Performance, @defer and zoneless](20-performance-defer-and-zoneless.md#ngoptimizedimage-images-in-the-right-order-and-size).
 - **stable (app)**: An app with no work left to do: no pending HTTP requests, navigation or other tracked tasks. The server sends the page when the app is stable. See [Server rendering and hydration](21-server-rendering-and-hydration.md#4-smallest-example).
 - **stagger**: Starting the animations of list items one after another with a small delay. See [Animations](23-animations.md#6-a-realistic-example).
+- **staging server**: A copy of the real server where the team tests a new version before real users get it. See [Build, configure, deploy and update](26-build-configure-deploy-update.md#one-build-for-every-server-runtime-configuration).
 - **standalone component**: A component that other components can import directly. All components are standalone by default. See [Components](04-components.md#using-a-component).
 - **`@starting-style`**: A CSS rule that gives an element its styles in the moment it first appears, so a transition has a "before" value. See [Animations](23-animations.md#enter-with-a-transition-starting-style).
+- **static field**: A field written with `static` (`static created = 0`). It belongs to the class itself, not to one object, so all objects share it; you read it as `ClassName.created`. See [Content projection and queries](12-content-projection-and-queries.md#6-a-realistic-example).
 - **static site generation (SSG) / prerendering**: Rendering pages to HTML files once, during the build, so a server only sends ready files. See [Server rendering and hydration](21-server-rendering-and-hydration.md#three-ways-to-render-csr-ssr-and-ssg).
 - **status code**: The number in a response that says how it went: `200` OK, `404` not found, `500` server error, `0` no answer at all. See [HTTP and async data](17-http-and-async-data.md#3-why-you-need-it).
 - **strict mode / strict null checks**: TypeScript settings that Angular projects use. With strict null checks, `null` and `undefined` are allowed only when the type says so. See [The TypeScript you need](03-typescript-you-need.md#strict-null-checks-and-the--and--operators).
@@ -466,9 +514,10 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 
 ## W
 
+- **W3C**: The group that writes web standards such as HTML and the WAI-ARIA patterns. See [Accessibility and Angular Aria](22-accessibility-and-angular-aria.md#angular-aria-headless-widgets).
 - **WAI-ARIA patterns**: The W3C descriptions of how widgets such as tabs or menus must work for keyboards and screen readers. See [Accessibility and Angular Aria](22-accessibility-and-angular-aria.md#angular-aria-headless-widgets).
 - **WCAG**: The Web Content Accessibility Guidelines, the rules that most accessibility laws refer to. See [Accessibility and Angular Aria](22-accessibility-and-angular-aria.md#3-why-you-need-it).
-- **Web Animations API**: The browser API behind `element.animate()` and `element.getAnimations()` for animations from JavaScript. See [Animations](23-animations.md#6-a-realistic-example).
+- **Web Animations API**: The browser API behind `element.animate()` and `element.getAnimations()` for animations from JavaScript. See [Animations](23-animations.md#what-a-test-can-prove-and-what-it-cannot).
 - **web component**: A custom element defined with browser APIs, often by a library outside Angular. Angular templates accept them with `CUSTOM_ELEMENTS_SCHEMA`. See [Components](04-components.md#more-component-settings).
 - **web worker**: A second thread in the browser for heavy calculations; it talks to the page with messages. See [Smaller topics](27-smaller-topics.md#web-workers).
 - **`whenStable()`**: A fixture method that returns a Promise which resolves when Angular has updated the page and finished pending work. See [Testing](19-testing.md#act-wait-assert).

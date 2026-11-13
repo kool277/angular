@@ -1,6 +1,8 @@
+// #docregion imports
 import {Component, signal} from '@angular/core';
 import {TestBed} from '@angular/core/testing';
 import {TestingInitialsPipe} from './initials.pipe';
+// #enddocregion imports
 
 // #docregion class
 describe('TestingInitialsPipe as a class', () => {

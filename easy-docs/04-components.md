@@ -156,7 +156,7 @@ Angular creates a separate **instance** of the class for each matching element. 
 
 ### The host element and the view
 
-The element that matches the selector is the component's **host element**. Angular renders the template inside it. The DOM that the template creates is the component's **view**. For the page above, the browser contains:
+The element that matches the selector is the component's **host element**. Angular **renders** the template inside it: it creates the HTML elements that the template describes and puts them into the page. The browser keeps the page as a tree of element objects that JavaScript can read and change; this tree is called the **DOM** (Document Object Model). The part of the DOM that the template creates is the component's **view**. For the page above, the browser contains:
 
 ```text
 <app-recipe-page>
@@ -253,7 +253,7 @@ Be careful: Angular reports an error for an unknown element, but not for an unkn
 
 ### Settings for the host element
 
-The `host` setting adds attributes, such as a CSS class or an ARIA role, to the host element. The component does this itself, so every user of the component gets them:
+The `host` setting adds attributes, such as a CSS class or an ARIA role, to the host element. An **ARIA role** is an attribute (`role="..."`) that tells screen readers (programs that read the page aloud) what an element is. The component does this itself, so every user of the component gets them:
 
 <!-- example: src/app/04-components/host/info-note.ts -->
 
@@ -284,11 +284,11 @@ export class CompInfoNote {}
 
 ### More `@Component` settings
 
-| Setting               | What it does                                                                                                                                                                                                                                                                                                                                                                                      |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `changeDetection`     | Says when Angular checks the component for changes. The default is `ChangeDetectionStrategy.OnPush`: Angular checks the component when an event listener in its template runs, when its inputs change ([chapter 8](08-inputs-outputs-model.md)), or when a signal it reads changes ([chapter 7](07-signals.md)). The other mode, `Eager`, checks after any activity in the app. Keep the default. |
-| `preserveWhitespaces` | Keeps all spaces and line breaks of the template ([chapter 5](05-templates-and-binding.md#whitespace)).                                                                                                                                                                                                                                                                                           |
-| `schemas`             | Allows unknown elements, for example **web components** made without Angular. See below.                                                                                                                                                                                                                                                                                                          |
+| Setting               | What it does                                                                                                                             |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `changeDetection`     | Says when Angular checks the component for changes. Keep the default. [Chapter 7](07-signals.md) explains when Angular updates the page. |
+| `preserveWhitespaces` | Keeps all spaces and line breaks of the template ([chapter 5](05-templates-and-binding.md#whitespace)).                                  |
+| `schemas`             | Allows unknown elements, for example **web components** made without Angular. See below.                                                 |
 
 **Change detection** is the work Angular does to find out what changed and update the page. You rarely set it yourself, but it explains a rule you will meet in [chapter 5](05-templates-and-binding.md#a-plain-field-changed-outside-an-event): when a plain field changes outside an event of the component, the page does not update.
 
@@ -357,6 +357,8 @@ Use inheritance sparingly. Small components that use each other are usually clea
 
 ### Two advanced topics for later
 
+You can skip this part now. It names tools that later chapters explain, so that you know they exist.
+
 - **Working with the DOM directly.** Angular creates and updates the DOM for you. In rare cases (focusing an element, measuring its size, using a browser API such as `ResizeObserver`) a component needs the real element. It gets it with `inject(ElementRef)` ([chapter 14](14-services-and-dependency-injection.md)) and touches it only after Angular has rendered, with `afterNextRender` or `afterEveryRender` ([chapter 13](13-lifecycle.md)). Never set `innerHTML` yourself: it can open your app to attacks ([chapter 25](25-security.md)).
 - **Creating components from code.** Sometimes you know which component to show only while the app runs, for example an admin view or a normal view. The `NgComponentOutlet` directive shows a component chosen in code; [chapter 5](05-templates-and-binding.md#choosing-a-component-while-the-app-runs) has an example. In TypeScript, `ViewContainerRef.createComponent` does the same ([chapter 14](14-services-and-dependency-injection.md) introduces `inject`, which you need for it). To load a component's code only when it is needed, use `@defer` ([chapter 20](20-performance-defer-and-zoneless.md)).
 
@@ -409,7 +411,29 @@ import {Component} from '@angular/core';
 export class CompSiteNav {}
 ```
 
-The footer (`site-footer.ts`) looks the same, with `role: 'contentinfo'` and the text `© 2026 Tasty`. The page component imports all parts, including the note and the recipe card from part 5:
+The footer looks the same, with another role, text and color:
+
+<!-- example: src/app/04-components/layout/site-footer.ts -->
+
+```ts
+import {Component} from '@angular/core';
+
+@Component({
+  selector: 'app-site-footer',
+  host: {role: 'contentinfo'},
+  template: `© 2026 Tasty`,
+  styles: `
+    :host {
+      display: block;
+      padding: 12px;
+      color: gray;
+    }
+  `,
+})
+export class CompSiteFooter {}
+```
+
+The page component imports all parts, including the note and the recipe card from part 5:
 
 <!-- example: src/app/04-components/layout/recipe-home.ts -->
 
@@ -464,7 +488,7 @@ main {
 Notice:
 
 - The page template reads like an outline of the page.
-- Each component sets its own `role` with `host`, so screen readers find the banner, the navigation and the footer, wherever the components are used.
+- Each component sets its own `role` with `host`, so screen readers find the banner, the navigation and the footer, wherever the components are used. These main areas of a page are called **landmarks**: a screen reader user can jump from one landmark to the next.
 - The `.cards` rule in `recipe-home.css` does not affect other components, and the rules inside the recipe card do not affect the page.
 
 The test checks the structure of the page:
@@ -504,12 +528,16 @@ Both recipe cards show "Plov", because the card has fixed data. In [chapter 8](0
 
 ### A typo in the selector
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 <h1>Today's recipes</h1>
 <app-recipe-crad />
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] NG8001: 'app-recipe-crad' is not a known element:
@@ -520,6 +548,8 @@ Both recipe cards show "Plov", because the card has fixed data. In [chapter 8](0
 You also get `▲ [WARNING] NG8113: All imports are unused`, because the imported card is never used. The same NG8001 error appears when the spelling is right but the class is missing from `imports`. Check both, as in [Using a component](#using-a-component).
 
 ### Two components match the same element
+
+<!-- prettier-ignore-start -->
 
 <!-- wrong -->
 
@@ -538,6 +568,8 @@ export class CompGreetingB {}
 export class CompGreetingPage {}
 ```
 
+<!-- prettier-ignore-end -->
+
 ```text
 ✘ [ERROR] NG8023: Multiple components match node with tagname app-greeting: 'CompGreetingA', 'CompGreetingB'. Find more at https://next.angular.dev/errors/NG8023 [plugin angular-compiler]
 ```
@@ -545,6 +577,8 @@ export class CompGreetingPage {}
 An element can have only one component. Give each component its own selector. A project-wide prefix (`app-`) and descriptive names help.
 
 ### A wrong path in `templateUrl`
+
+<!-- prettier-ignore-start -->
 
 <!-- wrong -->
 
@@ -556,6 +590,8 @@ An element can have only one component. Give each component its own selector. A 
 })
 export class CompRecipeCard {}
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] NG2008: Could not find template file './recipe-card.htm'. [plugin angular-compiler]
@@ -572,12 +608,16 @@ styleUrl: './recipe-card.css',
 
 ### Forgetting `export`
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
 @Component({selector: 'app-hidden', template: `Hidden`})
 class CompHidden {}
 ```
+
+<!-- prettier-ignore-end -->
 
 Another file that imports `CompHidden` gets:
 
@@ -592,6 +632,8 @@ Write `export class CompHidden {}`. Fix the first error; the second one goes awa
 
 ### Importing a class that is not a component
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -605,6 +647,8 @@ export class CompPlainClass {}
 export class CompWrongFive {}
 ```
 
+<!-- prettier-ignore-end -->
+
 ```text
 ✘ [ERROR] NG2012: Component imports must be standalone components, directives, pipes, or must be NgModules. [plugin angular-compiler]
 ```
@@ -612,6 +656,8 @@ export class CompWrongFive {}
 `imports` in `@Component` is only for things the template uses. A plain class (a model, a helper) needs only the TypeScript `import` line at the top of the file. Here the class has no `@Component` decorator, so Angular cannot use it in a template.
 
 ### Forgetting `override` in a component that extends a class
+
+<!-- prettier-ignore-start -->
 
 <!-- wrong -->
 
@@ -622,6 +668,8 @@ export class CompVoteButton extends ClickCounter {
   }
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] TS4114: This member must have an 'override' modifier because it overrides a member in the base class 'ClickCounter'. [plugin angular-compiler]

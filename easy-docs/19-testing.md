@@ -110,8 +110,11 @@ ng test --watch=false --include='src/app/19-testing/greeting/**/*.spec.ts'
 - **Vitest** is the **test runner**: it finds the spec files, runs them and prints the results. New Angular CLI projects use it.
 - **jsdom** imitates a browser inside Node.js. It has `document`, elements and events, but it draws nothing on a screen. This is why tests start fast.
 - **`TestBed`** is Angular's test helper. It creates a small Angular app for each test, with its own injector.
+- **`beforeEach(fn)`** runs `fn` before every test in the `describe` group; **`afterEach(fn)`** runs it after every test. Use them for set-up and clean-up that all tests share. Like `it`, they are globals.
 
 Every test starts with a fresh `TestBed`, so tests do not affect each other.
+
+The spec file that `ng new` made for your app (`src/app/app.spec.ts`) starts with `await TestBed.configureTestingModule({ imports: [App] }).compileComponents();` in a `beforeEach`. Older Angular versions needed this. With standalone components and the CLI you can leave it out: `TestBed.createComponent(App)` works without it.
 
 ### Running tests
 
@@ -124,7 +127,9 @@ Every test starts with a fresh `TestBed`, so tests do not affect each other.
 | `ng test --debug`                     | Waits for a debugger before it runs (see "Debugging tests" below).           |
 | `ng test --browsers=chromiumHeadless` | Runs the tests in a real browser. You must install a browser provider first. |
 
-Inside a spec file, `it.only(...)` runs only that test, and `it.skip(...)` skips it. `describe.only` and `describe.skip` work for groups. Remove them before you commit.
+A **build server** is a computer that builds and tests your code each time you save a new version of it, so `--watch=false` is what you use there. For `--browsers` you must install a **browser provider** first: a package, such as `@vitest/browser-playwright`, that starts the browser for Vitest. [Unit testing](https://angular.dev/guide/testing) shows how.
+
+Inside a spec file, `it.only(...)` runs only that test, and `it.skip(...)` skips it. `describe.only` and `describe.skip` work for groups. Remove them when you are done, or the other tests stay skipped.
 
 You change the test settings (for example `include`, `setupFiles`, `providersFile`, `coverage`) in the `test` target of `angular.json`. See [Unit testing](https://angular.dev/guide/testing).
 
@@ -153,41 +158,97 @@ In older tests you will see `fixture.detectChanges()` instead of the wait. Do no
 
 ### `TestBed` and `ComponentFixture`
 
-| API                                             | What it does                                                                                            |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `TestBed.configureTestingModule({ providers })` | Adds providers for this test, like `app.config.ts` does for the app. Call it **first**.                 |
-| `TestBed.inject(Token)`                         | Gets a service from the test injector.                                                                  |
-| `TestBed.createComponent(Component)`            | Creates the component and returns a `ComponentFixture`.                                                 |
-| `TestBed.tick()`                                | Runs pending effects and updates the page now. Useful when you must not wait (see HTTP below).          |
-| `fixture.componentInstance`                     | The component object: read its signals, call its methods.                                               |
-| `fixture.nativeElement`                         | The host HTML element.                                                                                  |
-| `fixture.debugElement`                          | An Angular wrapper around the element. `query(By.css('p'))` and `query(By.directive(X))` find children. |
-| `fixture.componentRef.setInput('name', v)`      | Sets an input, like a parent template would.                                                            |
-| `fixture.whenStable()`                          | A Promise that resolves when Angular is done.                                                           |
-| `fixture.destroy()`                             | Destroys the component, for example to test clean-up.                                                   |
+| API                                             | What it does                                                                                                              |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `TestBed.configureTestingModule({ providers })` | Adds providers for this test, like `app.config.ts` does for the app. Call it **first**.                                   |
+| `TestBed.inject(Token)`                         | Gets a service from the test injector.                                                                                    |
+| `TestBed.createComponent(Component)`            | Creates the component and returns a `ComponentFixture`.                                                                   |
+| `TestBed.tick()`                                | Runs pending effects and updates the page now. Useful when you must not wait (see HTTP below).                            |
+| `fixture.componentInstance`                     | The component object: read its signals, call its methods.                                                                 |
+| `fixture.nativeElement`                         | The host HTML element.                                                                                                    |
+| `fixture.debugElement`                          | A `DebugElement`: an Angular wrapper around the element. `query(By.css('p'))` and `query(By.directive(X))` find children. |
+| `fixture.componentRef.setInput('name', v)`      | Sets an input, like a parent template would.                                                                              |
+| `fixture.whenStable()`                          | A Promise that resolves when Angular is done.                                                                             |
+| `fixture.destroy()`                             | Destroys the component, for example to test clean-up.                                                                     |
+
+`By` comes from `@angular/platform-browser`. `By.css('p')` finds elements with a CSS selector, and `By.directive(X)` finds elements that have the component or directive `X`. `query` returns the first match as a `DebugElement`, `queryAll` returns all; `.nativeElement` is the real HTML element inside it.
 
 ### Matchers
 
 The method after `expect(x)` is a **matcher**. The most common ones:
 
-| Matcher                       | Passes when                                                    |
-| ----------------------------- | -------------------------------------------------------------- |
-| `toBe(y)`                     | `x` is exactly `y` (same number, same text, same object).      |
-| `toEqual(y)`                  | `x` has the same content as `y` (good for arrays and objects). |
-| `toContain(y)`                | the text or array `x` contains `y`.                            |
-| `toBeNull()` / `toBeTruthy()` | `x` is `null` / `x` counts as true.                            |
-| `toHaveBeenCalledWith(...)`   | the spy `x` was called with these arguments.                   |
-| `not.toBe(y)`                 | `not` turns any matcher around.                                |
+| Matcher                           | Passes when                                                    |
+| --------------------------------- | -------------------------------------------------------------- |
+| `toBe(y)`                         | `x` is exactly `y` (same number, same text, same object).      |
+| `toEqual(y)`                      | `x` has the same content as `y` (good for arrays and objects). |
+| `toContain(y)`                    | the text or array `x` contains `y`.                            |
+| `toBeNull()` / `toBeTruthy()`     | `x` is `null` / `x` counts as true.                            |
+| `toHaveLength(n)`                 | the array or text `x` has `n` items or characters.             |
+| `toBeInstanceOf(C)`               | `x` was created with `new C(...)`.                             |
+| `toHaveBeenCalledWith(...)`       | the spy `x` was called with these arguments.                   |
+| `toHaveBeenCalledTimes(n)`        | the spy `x` was called `n` times.                              |
+| `toHaveBeenNthCalledWith(n, ...)` | call number `n` of the spy `x` had these arguments.            |
+| `not.toBe(y)`                     | `not` turns any matcher around.                                |
 
 ### Fakes and spies
 
 A **test double** replaces a real dependency in a test. A **fake** (or **stub**) is a simple object that you give instead of the real service. A **spy** records how it was called. `vi.fn()` creates a spy function; `vi.spyOn(object, 'method')` watches a method of a real object.
 
+A spy can also change what the method does. `.mockReturnValue(0)` makes it return `0` instead of running the real code. `.mockImplementation(() => {})` runs your function instead. `vi.restoreAllMocks()` (or `spy.mockRestore()` for one spy) puts the real methods back.
+
 ## 6. A realistic example
 
-Each section shows how to test one kind of code. All the examples are in `src/app/19-testing/`.
+Each section shows how to test one kind of code. It first shows the code under test, then the `import` lines of the spec file, then the tests. All the examples are in [`src/app/19-testing/`](examples/src/app/19-testing/).
+
+Where the names in the tests come from:
+
+| Name                                                               | Import from                    |
+| ------------------------------------------------------------------ | ------------------------------ |
+| `describe`, `it`, `expect`, `vi`, `beforeEach`, `afterEach`        | nothing (globals)              |
+| `TestBed`, `ComponentFixture`                                      | `@angular/core/testing`        |
+| `Component`, `signal`, `inputBinding`, `outputBinding`, `Injector` | `@angular/core`                |
+| `By`                                                               | `@angular/platform-browser`    |
+| `Router`, `provideRouter`                                          | `@angular/router`              |
+| `RouterTestingHarness`                                             | `@angular/router/testing`      |
+| `ComponentHarness`                                                 | `@angular/cdk/testing`         |
+| `TestbedHarnessEnvironment`                                        | `@angular/cdk/testing/testbed` |
 
 ### Components with inputs
+
+The component under test shows a label, the number of stars, and five buttons. A click on a button emits its number:
+
+<!-- example: src/app/19-testing/rating/rating.ts -->
+
+```ts
+import {Component, input, output} from '@angular/core';
+
+@Component({
+  selector: 'app-testing-rating',
+  template: `
+    <p>{{ label() }}: {{ stars() }} of 5</p>
+    @for (star of [1, 2, 3, 4, 5]; track star) {
+      <button type="button" [attr.aria-label]="star + ' stars'" (click)="rated.emit(star)">
+        {{ star <= stars() ? '★' : '☆' }}
+      </button>
+    }
+  `,
+})
+export class TestingRating {
+  readonly label = input('Rating');
+  readonly stars = input.required<number>();
+  readonly rated = output<number>();
+}
+```
+
+The spec file starts with these imports:
+
+<!-- example: src/app/19-testing/rating/rating.spec.ts#imports -->
+
+```ts
+import {Component, inputBinding, outputBinding, signal} from '@angular/core';
+import {TestBed} from '@angular/core/testing';
+import {TestingRating} from './rating';
+```
 
 Set inputs with `fixture.componentRef.setInput(name, value)`:
 
@@ -207,6 +268,8 @@ it('shows the stars from the input', async () => {
 ```
 
 `stars` is a required input, so set it before the first `whenStable()`.
+
+Why `.trim()`? The template has a line break and spaces around `{{ ... }}` inside each `<button>`. Angular removes whitespace **between** elements, but text **inside** an element keeps one space at its start and its end. So the button's `textContent` is `' ★ '`, not `'★'`. Use `.trim()` to remove these spaces, or compare with `toContain`.
 
 ### Outputs
 
@@ -290,7 +353,49 @@ describe('TestingRating inside a test host', () => {
 
 ### Typing into inputs
 
-Set the element's `value`, then send an `input` event so that Angular notices. Here the inputs belong to a signal form:
+Set the element's `value`, then send an `input` event so that Angular notices. Here the inputs belong to a signal form ([Forms](16-forms.md)):
+
+<!-- example: src/app/19-testing/forms/login-form.ts -->
+
+```ts
+import {Component, signal} from '@angular/core';
+import {FormField, email, form, minLength, required, schema} from '@angular/forms/signals';
+
+export interface TestingLogin {
+  email: string;
+  password: string;
+}
+
+export const testingLoginSchema = schema<TestingLogin>((path) => {
+  required(path.email);
+  email(path.email);
+  required(path.password);
+  minLength(path.password, 8);
+});
+
+@Component({
+  selector: 'app-testing-login-form',
+  imports: [FormField],
+  template: `
+    <input type="email" [formField]="loginForm.email" />
+    <input type="password" [formField]="loginForm.password" />
+    <button type="submit" [disabled]="loginForm().invalid()">Log in</button>
+  `,
+})
+export class TestingLoginForm {
+  readonly model = signal<TestingLogin>({email: '', password: ''});
+  readonly loginForm = form(this.model, testingLoginSchema);
+}
+```
+
+<!-- example: src/app/19-testing/forms/login-form.spec.ts#imports -->
+
+```ts
+import {Injector, signal} from '@angular/core';
+import {TestBed} from '@angular/core/testing';
+import {form} from '@angular/forms/signals';
+import {TestingLogin, TestingLoginForm, testingLoginSchema} from './login-form';
+```
 
 <!-- example: src/app/19-testing/forms/login-form.spec.ts#component -->
 
@@ -320,7 +425,50 @@ describe('TestingLoginForm', () => {
 
 ### Services
 
-A service without dependencies can be tested by itself. Get it with `TestBed.inject`:
+The checkout service adds tax. It gets the tax rate from a second service:
+
+<!-- example: src/app/19-testing/services/tax-rates.ts -->
+
+```ts
+import {Service} from '@angular/core';
+
+@Service()
+export class TestingTaxRates {
+  /** The real app would ask a server. */
+  rateFor(country: string): number {
+    return country === 'UZ' ? 0.12 : 0.2;
+  }
+}
+```
+
+<!-- example: src/app/19-testing/services/checkout.ts -->
+
+```ts
+import {Service, inject} from '@angular/core';
+import {TestingTaxRates} from './tax-rates';
+
+@Service()
+export class TestingCheckout {
+  private readonly taxRates = inject(TestingTaxRates);
+
+  /** Sum of the prices plus tax, rounded to cents. */
+  total(prices: number[], country: string): number {
+    const sum = prices.reduce((a, b) => a + b, 0);
+    const withTax = sum * (1 + this.taxRates.rateFor(country));
+    return Math.round(withTax * 100) / 100;
+  }
+}
+```
+
+<!-- example: src/app/19-testing/services/checkout.spec.ts#imports -->
+
+```ts
+import {TestBed} from '@angular/core/testing';
+import {TestingCheckout} from './checkout';
+import {TestingTaxRates} from './tax-rates';
+```
+
+You can test a service with its real dependencies. Get it with `TestBed.inject`:
 
 <!-- example: src/app/19-testing/services/checkout.spec.ts#real -->
 
@@ -348,7 +496,7 @@ it('uses a fake tax-rate service', () => {
 });
 ```
 
-Or keep the real service and change one method with `vi.spyOn`:
+Or keep the real service and change one method with `vi.spyOn`. `mockReturnValue(0)` makes `rateFor` return `0` without running its code:
 
 <!-- example: src/app/19-testing/services/checkout.spec.ts#spy -->
 
@@ -365,6 +513,34 @@ it('can spy on a real service', () => {
 The same `providers` work for components: the component then gets the fake when it calls `inject()`. To replace a provider that is listed in a component's own `providers`, use `TestBed.overrideComponent(Component, { set: { providers: [...] } })`.
 
 ### Pipes
+
+The pipe under test:
+
+<!-- example: src/app/19-testing/pipes/initials.pipe.ts -->
+
+```ts
+import {Pipe, PipeTransform} from '@angular/core';
+
+/** 'ada lovelace' → 'AL' */
+@Pipe({name: 'initials'})
+export class TestingInitialsPipe implements PipeTransform {
+  transform(name: string): string {
+    return name
+      .split(' ')
+      .filter((part) => part !== '')
+      .map((part) => part[0].toUpperCase())
+      .join('');
+  }
+}
+```
+
+<!-- example: src/app/19-testing/pipes/initials.pipe.spec.ts#imports -->
+
+```ts
+import {Component, signal} from '@angular/core';
+import {TestBed} from '@angular/core/testing';
+import {TestingInitialsPipe} from './initials.pipe';
+```
 
 A pipe is a class with a `transform` method. Test it with `new`, without `TestBed`:
 
@@ -411,6 +587,33 @@ describe('TestingInitialsPipe in a template', () => {
 ```
 
 ### Directives
+
+The directive under test:
+
+<!-- example: src/app/19-testing/directives/highlight.ts -->
+
+```ts
+import {Directive, input} from '@angular/core';
+
+@Directive({
+  selector: '[appTestingHighlight]',
+  host: {
+    '[style.backgroundColor]': 'color() || "yellow"',
+  },
+})
+export class TestingHighlight {
+  readonly color = input('', {alias: 'appTestingHighlight'});
+}
+```
+
+<!-- example: src/app/19-testing/directives/highlight.spec.ts#imports -->
+
+```ts
+import {Component} from '@angular/core';
+import {TestBed} from '@angular/core/testing';
+import {By} from '@angular/platform-browser';
+import {TestingHighlight} from './highlight';
+```
 
 Test an attribute directive through a host component with several elements, also one without the directive:
 
@@ -485,6 +688,42 @@ it('loads the details of the tea you click', async () => {
 
 ### Routing
 
+The two pages and their routes:
+
+<!-- example: src/app/19-testing/routing/pages.ts -->
+
+```ts
+import {Component, input} from '@angular/core';
+import {RouterLink, Routes} from '@angular/router';
+
+@Component({
+  imports: [RouterLink],
+  template: `<a routerLink="/teas/green">Green tea</a>`,
+})
+export class TestingTeaMenu {}
+
+@Component({
+  template: `<h2>Tea: {{ id() }}</h2>`,
+})
+export class TestingTeaPage {
+  readonly id = input.required<string>();
+}
+
+export const testingRoutes: Routes = [
+  {path: '', component: TestingTeaMenu},
+  {path: 'teas/:id', component: TestingTeaPage},
+];
+```
+
+<!-- example: src/app/19-testing/routing/pages.spec.ts#imports -->
+
+```ts
+import {TestBed} from '@angular/core/testing';
+import {Router, provideRouter, withComponentInputBinding} from '@angular/router';
+import {RouterTestingHarness} from '@angular/router/testing';
+import {TestingTeaMenu, TestingTeaPage, testingRoutes} from './pages';
+```
+
 `RouterTestingHarness` from `@angular/router/testing` creates a router outlet and navigates:
 
 <!-- example: src/app/19-testing/routing/pages.spec.ts#harness -->
@@ -552,7 +791,7 @@ describe('login form rules', () => {
 });
 ```
 
-The schema under test:
+The schema under test (from `login-form.ts` above):
 
 <!-- example: src/app/19-testing/forms/login-form.ts#schema -->
 
@@ -569,7 +808,38 @@ Use such isolated tests for rules, errors and disabled or required state. Use a 
 
 ### Timers: fake time
 
-Code with `setTimeout` or `interval` would make tests slow. Vitest's **fake timers** replace the clock: time moves only when the test says so.
+Code with `setTimeout` or `interval` would make tests slow. Vitest's **fake timers** replace the clock: time moves only when the test says so. This toast shows a message and hides it after 3 seconds:
+
+<!-- example: src/app/19-testing/timers/toast.ts -->
+
+```ts
+import {Component, signal} from '@angular/core';
+
+@Component({
+  selector: 'app-testing-toast',
+  template: `
+    <button type="button" (click)="show('Saved!')">Save</button>
+    @if (message()) {
+      <p role="status">{{ message() }}</p>
+    }
+  `,
+})
+export class TestingToast {
+  protected readonly message = signal('');
+
+  show(text: string): void {
+    this.message.set(text);
+    setTimeout(() => this.message.set(''), 3000);
+  }
+}
+```
+
+<!-- example: src/app/19-testing/timers/toast.spec.ts#imports -->
+
+```ts
+import {TestBed} from '@angular/core/testing';
+import {TestingToast} from './toast';
+```
 
 <!-- example: src/app/19-testing/timers/toast.spec.ts#fake-timers -->
 
@@ -600,7 +870,7 @@ it('hides the message after 3 seconds', async () => {
 
 ### Component harnesses
 
-A test that uses CSS classes (`.plus`, `.count`) breaks when you rename a class. A **component harness** is a class that knows how to use one component: tests call `increment()` and `getCount()` and do not care about the HTML. Harnesses come from the Angular CDK (`@angular/cdk/testing`), which must be installed (`ng add @angular/cdk`).
+A test that uses CSS classes (`.plus`, `.count`) breaks when you rename a class. A **component harness** is a class that knows how to use one component: tests call `increment()` and `getCount()` and do not care about the HTML. Harnesses come from the **Angular CDK** (Component Dev Kit, `@angular/cdk/testing`). The CDK is a package of building blocks from the Angular team; your app does not have it yet, so install it with `ng add @angular/cdk`. **Angular Material** is the Angular team's library of ready-made components (buttons, menus, dialogs), built on the CDK.
 
 The component:
 
@@ -674,7 +944,16 @@ export class TestingCounterHarness extends ComponentHarness {
 - `with(...)` returns a **`HarnessPredicate`**, a filter that picks one of several components.
 - All methods are `async`. The harness updates the page after each action, so you do not call `whenStable()`.
 
-The test:
+The test. Note the import path `@angular/cdk/testing/testbed`; `@angular/cdk/testing` alone does not export `TestbedHarnessEnvironment`:
+
+<!-- example: src/app/19-testing/harness/counter.spec.ts#imports -->
+
+```ts
+import {TestbedHarnessEnvironment} from '@angular/cdk/testing/testbed';
+import {TestBed} from '@angular/core/testing';
+import {TestingTwoCounters} from './counter';
+import {TestingCounterHarness} from './counter-harness';
+```
 
 <!-- example: src/app/19-testing/harness/counter.spec.ts#use -->
 
@@ -703,7 +982,7 @@ it('finds every counter on the page', async () => {
 });
 ```
 
-`TestbedHarnessEnvironment.loader(fixture)` gives a **harness loader**. `getHarness` finds the first match, `getAllHarnesses` finds all. Libraries such as Angular Material ship a harness for each of their components. The same harnesses also work in end-to-end tests.
+`TestbedHarnessEnvironment.loader(fixture)` gives a **harness loader**. `getHarness` finds the first match, `getAllHarnesses` finds all. Libraries such as Angular Material ship a harness for each of their components. The same harnesses also work in **end-to-end tests**: tests that start the whole app in a real browser and click through it like a user.
 
 ### Code coverage
 
@@ -719,9 +998,9 @@ The report is in the `coverage/` folder; open `coverage/index.html` in a browser
 ### Debugging tests
 
 - Read the failure first. Vitest prints the expected and the received value, and the line of the failing `expect`.
-- Add `console.log(fixture.nativeElement.innerHTML)` to see the HTML the test sees.
+- Add `console.log(fixture.nativeElement.innerHTML)` to see the HTML the test sees. The output appears in the terminal under a line such as `stdout | src/app/x.spec.ts > describe name > test name`. Vitest hides it for passing tests when an AI coding tool runs the tests; then add `--reporters=default` to the command.
 - Run one file with `--include`, or one test with `it.only`.
-- `ng test --debug` starts the tests and waits for a debugger, for example the one in VS Code or Chrome DevTools for Node.js. Then you can set breakpoints.
+- `ng test --debug` starts the tests and waits for a **debugger**: a tool that stops the code at a line you choose (a **breakpoint**) and shows the values of all variables there. VS Code has one, and Chrome DevTools can connect to Node.js too.
 
 ### In older projects: Karma, Jasmine and zone.js helpers
 
@@ -733,11 +1012,13 @@ Older projects often use **Karma** (a runner that starts a real browser) and **J
 
 > **Experimental:** in Angular 22, `fakeAsync`, `tick`, `flush`, `flushMicrotasks` and `discardPeriodicTasks` are marked experimental, and Angular no longer recommends `fakeAsync`. For new tests use `async`/`await` and Vitest fake timers. See [experimental](https://angular.dev/reference/releases#experimental).
 
-Karma still works (`ng new my-app --test-runner=karma`). To move a project to Vitest, follow [Migrating from Karma to Vitest](https://angular.dev/guide/testing/migrating-to-vitest); the schematic `ng g @schematics/angular:refactor-jasmine-vitest` rewrites many Jasmine calls for you (it is experimental too, so check its changes).
+Karma still works (`ng new my-app --test-runner=karma`). To move a project to Vitest, follow [Migrating from Karma to Vitest](https://angular.dev/guide/testing/migrating-to-vitest); the **schematic** (a script for the CLI that creates or changes files in your project) `ng g @schematics/angular:refactor-jasmine-vitest` rewrites many Jasmine calls for you (it is experimental too, so check its changes).
 
 ## 7. Common mistakes
 
 ### Asserting before the page is updated
+
+<!-- prettier-ignore-start -->
 
 <!-- wrong -->
 
@@ -745,6 +1026,8 @@ Karma still works (`ng new my-app --test-runner=karma`). To move a project to Vi
 fixture.nativeElement.querySelector('button').click();
 expect(fixture.nativeElement.querySelector('h1').textContent).toBe('Hello, Ada!');
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 AssertionError: expected 'Hello, world!' to be 'Hello, Ada!' // Object.is equality
@@ -783,11 +1066,15 @@ describe('TestingGreeting', () => {
 
 ### Setting an input with `set`
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
 fixture.componentInstance.stars.set(3);
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] TS2339: Property 'set' does not exist on type 'InputSignal<number>'. [plugin angular-compiler]
@@ -812,12 +1099,16 @@ it('shows the stars from the input', async () => {
 
 ### Forgetting a required input
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
 const fixture = TestBed.createComponent(TestingRating);
 await fixture.whenStable();
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 Error: NG0950: Input "stars" is required but no value is available yet. Find more at https://v22.angular.dev/errors/NG0950
@@ -827,6 +1118,8 @@ Call `fixture.componentRef.setInput('stars', ...)` (or use `inputBinding`) befor
 
 ### Configuring `TestBed` too late
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -835,6 +1128,8 @@ TestBed.configureTestingModule({
   providers: [{provide: TestingTaxRates, useValue: {rateFor: () => 0.5}}],
 });
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 Error: Cannot configure the test module when the test module has already been instantiated. Make sure you are not using `inject` before `TestBed.configureTestingModule`.
@@ -859,6 +1154,8 @@ it('uses a fake tax-rate service', () => {
 
 ### Waiting while a request is open
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -866,6 +1163,8 @@ page.querySelectorAll<HTMLButtonElement>('li button')[1].click();
 await fixture.whenStable();
 httpTesting.expectOne('/http-demo/teas/2.json').flush(TEAS[1]);
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 Error: Test timed out in 5000ms.
@@ -927,6 +1226,8 @@ Write tests for it:
 2. Two clicks show "Like (2)" and emit `1`, then `2`.
 3. With `limit` set to `1`, one click disables the button.
 4. The `label` input changes the text.
+
+Remember the spaces inside the `<button>` (see "Components with inputs" above): compare `textContent!.trim()`, or use `toContain`.
 
 <details><summary>Solution</summary>
 

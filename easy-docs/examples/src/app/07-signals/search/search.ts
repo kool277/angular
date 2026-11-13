@@ -17,7 +17,6 @@ const CITIES = ['Andijan', 'Bukhara', 'Fergana', 'Khiva', 'Namangan', 'Samarkand
   `,
 })
 export class SignalsSearch {
-  // #docregion debounced
   readonly query = signal('');
 
   // Follows `query`, but only after it has not changed for 300 ms.
@@ -27,5 +26,4 @@ export class SignalsSearch {
     const text = this.settledQuery.value().toLowerCase();
     return CITIES.filter((city) => city.toLowerCase().includes(text));
   });
-  // #enddocregion debounced
 }

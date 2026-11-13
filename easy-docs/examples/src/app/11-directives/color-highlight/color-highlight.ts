@@ -21,6 +21,7 @@ export class DirColorHighlight {
   }
 }
 
+// #docregion demo
 @Component({
   selector: 'app-color-highlight-demo',
   imports: [DirColorHighlight],
@@ -36,3 +37,4 @@ export class DirColorHighlight {
 export class DirColorHighlightDemo {
   readonly favorite = signal('lightgreen');
 }
+// #enddocregion demo

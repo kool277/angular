@@ -1,7 +1,7 @@
+// #docregion control
 import {Component, input, model, output} from '@angular/core';
 import {FormValueControl} from '@angular/forms/signals';
 
-// #docregion control
 @Component({
   selector: 'app-forms-star-rating',
   template: `

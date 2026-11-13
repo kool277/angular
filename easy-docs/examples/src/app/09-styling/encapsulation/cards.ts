@@ -1,4 +1,6 @@
+// #docregion import
 import {Component, ViewEncapsulation} from '@angular/core';
+// #enddocregion import
 
 // #docregion emulated
 @Component({
@@ -41,6 +43,7 @@ export class StylingNoneCard {}
 export class StylingShadowCard {}
 // #enddocregion shadow
 
+// #docregion demo
 @Component({
   selector: 'app-encapsulation-demo',
   imports: [StylingEmulatedCard, StylingNoneCard, StylingShadowCard],
@@ -52,3 +55,4 @@ export class StylingShadowCard {}
   `,
 })
 export class StylingEncapsulationDemo {}
+// #enddocregion demo

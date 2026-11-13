@@ -2,6 +2,22 @@
 <xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
   <file source-language="en-US" target-language="uz" datatype="plaintext" original="ng2.template">
     <body>
+      <trans-unit id="8856905278208146821" datatype="html">
+        <source> <x id="ICU" equiv-text="{count(), plural, =0 {No tickets yet.} =1 {One ticket.} other {{{ count() }} tickets.}}" xid="4460460011769938422"/> </source>
+        <target> <x id="ICU" equiv-text="{count(), plural, =0 {No tickets yet.} =1 {One ticket.} other {{{ count() }} tickets.}}" xid="4460460011769938422"/> </target>
+      </trans-unit>
+      <trans-unit id="540461368404685598" datatype="html">
+        <source>{VAR_PLURAL, plural, =0 {No tickets yet.} =1 {One ticket.} other {<x id="INTERPOLATION"/> tickets.}}</source>
+        <target>{VAR_PLURAL, plural, =0 {Hali chipta yoʻq.} other {<x id="INTERPOLATION"/> ta chipta.}}</target>
+      </trans-unit>
+      <trans-unit id="2646103807771871517" datatype="html">
+        <source> Ticket type: <x id="ICU" equiv-text="{kind(), select, adult {adult} child {child} other {other}}" xid="453015323503572856"/> </source>
+        <target> Chipta turi: <x id="ICU" equiv-text="{kind(), select, adult {adult} child {child} other {other}}" xid="453015323503572856"/> </target>
+      </trans-unit>
+      <trans-unit id="453015323503572856" datatype="html">
+        <source>{VAR_SELECT, select, adult {adult} child {child} other {other}}</source>
+        <target>{VAR_SELECT, select, adult {kattalar} child {bolalar} other {boshqa}}</target>
+      </trans-unit>
       <trans-unit id="homeTitle" datatype="html">
         <source>Welcome to Samarkand!</source>
         <target>Samarqandga xush kelibsiz!</target>
@@ -10,13 +26,17 @@
         <source>Hello, <x id="INTERPOLATION" equiv-text="{{ visitor() }}"/>! Your ticket is ready.</source>
         <target>Salom, <x id="INTERPOLATION" equiv-text="{{ visitor() }}"/>! Chiptangiz tayyor.</target>
       </trans-unit>
+      <trans-unit id="6566401499695666544" datatype="html">
+        <source>Print your ticket</source>
+        <target>Chiptangizni chop eting</target>
+      </trans-unit>
+      <trans-unit id="7049887240439736400" datatype="html">
+        <source>Print</source>
+        <target>Chop etish</target>
+      </trans-unit>
       <trans-unit id="ticketStatus" datatype="html">
         <source>Valid for one day</source>
         <target>Bir kun amal qiladi</target>
-      </trans-unit>
-      <trans-unit id="540461368404685598" datatype="html">
-        <source>{VAR_PLURAL, plural, =0 {No tickets yet.} =1 {One ticket.} other {<x id="INTERPOLATION"/> tickets.}}</source>
-        <target>{VAR_PLURAL, plural, =0 {Hali chipta yoʻq.} other {<x id="INTERPOLATION"/> ta chipta.}}</target>
       </trans-unit>
     </body>
   </file>

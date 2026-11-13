@@ -1,7 +1,9 @@
+// #docregion imports
 import {TestBed} from '@angular/core/testing';
 import {Router, provideRouter, withComponentInputBinding} from '@angular/router';
 import {RouterTestingHarness} from '@angular/router/testing';
 import {TestingTeaMenu, TestingTeaPage, testingRoutes} from './pages';
+// #enddocregion imports
 
 describe('tea routes', () => {
   beforeEach(() => {

@@ -8,6 +8,8 @@ You need no Angular knowledge for this chapter. You should know some basic HTML,
 - what a CSS rule looks like;
 - what a JavaScript variable, function and object are.
 
+It helps if you have seen a JavaScript `class` and the words `import` and `export`. If not, this chapter explains each in one sentence, and [chapter 3](03-typescript-you-need.md#classes) explains classes in more detail.
+
 You do not need to know TypeScript yet. [Chapter 3](03-typescript-you-need.md) teaches the TypeScript you need.
 
 ## 2. In one sentence
@@ -62,13 +64,13 @@ This file is written in **TypeScript**. TypeScript is JavaScript plus types (lab
 
 What each line does:
 
-| Line                                         | Meaning                                                                                                                                                    |
-| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `import { Component } from '@angular/core';` | Loads `Component` from the Angular package `@angular/core`, so this file can use it.                                                                       |
-| `@Component({ ... })`                        | A **decorator**. It is a special label on the class below it. It tells Angular: "this class is a component, and here are its settings".                    |
-| `selector: 'app-hello',`                     | The **selector** is the HTML tag name of the component. Other templates show this component by writing `<app-hello />`.                                    |
-| ``template: `<h1>Hello, Angular!</h1>`,``    | The **template** is the HTML the component shows. The backticks (`` ` ``) make a JavaScript string that may span several lines.                            |
-| `export class IntroHello {}`                 | The **class** holds the data and the code of the component. This one is empty because the greeting never changes. `export` lets other files use the class. |
+| Line                                         | Meaning                                                                                                                                                                                                                                                         |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `import { Component } from '@angular/core';` | Loads `Component` from the Angular package `@angular/core`, so this file can use it. Spaces inside `{ }` do not matter: `{Component}` and `{ Component }` are the same.                                                                                         |
+| `@Component({ ... })`                        | A **decorator**. It is a special label on the class below it. It tells Angular: "this class is a component, and here are its settings".                                                                                                                         |
+| `selector: 'app-hello',`                     | The **selector** is the HTML tag name of the component. Other templates show this component by writing `<app-hello />`.                                                                                                                                         |
+| ``template: `<h1>Hello, Angular!</h1>`,``    | The **template** is the HTML the component shows. The backticks (`` ` ``) make a JavaScript string that may span several lines.                                                                                                                                 |
+| `export class IntroHello {}`                 | A **class** is a plan for objects: it lists their data (fields) and their functions (methods). This class holds the data and the code of the component. It is empty because the greeting never changes. `export` lets other files load the class with `import`. |
 
 When Angular finds `<app-hello />` in a page, it puts the template inside it. The browser then shows:
 
@@ -177,6 +179,8 @@ Read it from the class up:
 
 There is no code that changes the paragraph. You change the field. Angular sees that a click happened and updates the text. After two clicks the page shows `2 people like this.`
 
+A plain field like `likes` works here because Angular checks the page after every event, such as a click. When data changes without an event (for example, in a timer), a plain field is not enough. [Chapter 7](07-signals.md) shows **signals**, the recommended way to hold data that changes.
+
 The test file next to the component proves this. A **test** is code that checks that other code works. It clicks the button twice and checks the text:
 
 <!-- example: src/app/01-what-is-angular/like-button/like-button.spec.ts#clicks -->
@@ -203,6 +207,8 @@ The `{{ }}` and `( )` syntax is the topic of [chapter 5](05-templates-and-bindin
 
 ### Using normal quotes for a template on several lines
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -216,6 +222,8 @@ import { Component } from '@angular/core';
 })
 export class IntroHello {}
 ```
+
+<!-- prettier-ignore-end -->
 
 The build fails with many errors. The first one is the real problem:
 
@@ -240,6 +248,8 @@ template: `
 
 ### A typo in a setting name
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -249,6 +259,8 @@ template: `
 })
 export class IntroHello {}
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] TS2561: Object literal may only specify known properties, but 'templete' does not exist in type 'Component'. Did you mean to write 'template'? [plugin angular-compiler]
@@ -260,6 +272,8 @@ TypeScript knows every allowed setting of `@Component`, so it finds the typo for
 
 ### Forgetting the import
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -269,6 +283,8 @@ TypeScript knows every allowed setting of `@Component`, so it finds the typo for
 })
 export class IntroHello {}
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] TS2304: Cannot find name 'Component'. [plugin angular-compiler]
@@ -285,6 +301,8 @@ import {Component} from '@angular/core';
 ## 8. Try it yourself
 
 Write a component with the selector `app-greeting-card` and the class name `IntroGreetingCard`. It shows a heading `Hello, Amina!` (use your own name) and below it a paragraph `I am learning Angular.`
+
+You have no Angular project yet. Write the component in any text file, or on paper. After [chapter 2](02-install-and-first-app.md) you can put it into your project and see it in the browser.
 
 Hint: start from the [smallest example](#4-smallest-example). A template on two lines needs backticks.
 

@@ -25,7 +25,7 @@ interface Fruit {
       }
       <!-- #enddocregion loop -->
     </ul>
-    <button (click)="removeFirst()">Eat the first fruit</button>
+    <button type="button" (click)="removeFirst()">Eat the first fruit</button>
   `,
   styles: `
     .odd {

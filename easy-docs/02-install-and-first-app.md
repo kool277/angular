@@ -83,15 +83,21 @@ Go to the folder where you keep your projects (for example with `cd Documents`).
 ng new my-first-app
 ```
 
-`my-first-app` is the name of the project. Use lowercase letters and hyphens. The CLI asks some questions. Use the arrow keys and Enter to answer:
+`my-first-app` is the name of the project. Use lowercase letters and hyphens. The CLI asks some questions. Use the arrow keys to move to an answer and Enter to choose it. For a yes/no question you can also type `y` or `n` and press Enter:
 
 | Question                                                                                           | Answer for this guide |
 | -------------------------------------------------------------------------------------------------- | --------------------- |
 | `Which stylesheet system would you like to use?`                                                   | CSS                   |
-| `Do you want to enable Server-Side Rendering (SSR) and Static Site Generation (SSG/Prerendering)?` | No (press Enter)      |
-| `Which AI tools should Angular integrate with?`                                                    | None (press Enter)    |
+| `Do you want to enable Server-Side Rendering (SSR) and Static Site Generation (SSG/Prerendering)?` | No                    |
+| `Which AI tools should Angular integrate with?`                                                    | None                  |
 
-The CLI then creates the files (you see one `CREATE` line per file) and downloads the packages with npm. This can take a few minutes. When it is done, you have a new folder `my-first-app`. This folder is your **workspace**: the folder with your app, its settings and its packages.
+You can also give the answers as **options** (words after the command that start with `--`). Then the CLI asks nothing:
+
+```shell
+ng new my-first-app --style=css --ssr=false --ai-config=none
+```
+
+The CLI then creates the files (you see one `CREATE` line per file) and downloads the packages with npm. This can take a few minutes. `ng new` also starts a Git repository in the new folder (Git is a tool that records the history of your files). It may print some lines that start with `hint:` and then `Successfully initialized git.` These lines are not errors; you can ignore them. When it is done, you have a new folder `my-first-app`. This folder is your **workspace**: the folder with your app, its settings and its packages.
 
 ### Step 4: Start the development server
 
@@ -162,7 +168,7 @@ In your project the class is called `App`, the selector is `app-root` and the fi
 
 | Line                                                 | Meaning                                                                                                                                                                                                                                     |
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `import { Component, signal } from '@angular/core';` | Loads two things from Angular: `Component` and `signal`.                                                                                                                                                                                    |
+| `import { Component, signal } from '@angular/core';` | Loads two things from Angular: `Component` and `signal`. Spaces inside `{ }` do not matter: this guide writes `{Component, signal}`, your generated file has `{ Component, signal }`.                                                       |
 | `import { RouterOutlet } from '@angular/router';`    | Loads `RouterOutlet` from Angular's router package.                                                                                                                                                                                         |
 | `imports: [RouterOutlet],`                           | Lists what the template may use. `RouterOutlet` is the code behind `<router-outlet />`.                                                                                                                                                     |
 | `selector: 'app-first-app',`                         | The tag name of this component. In your app it is `app-root`.                                                                                                                                                                               |
@@ -221,19 +227,19 @@ my-first-app/
 
 You will work almost only in `src/app/`. The most important other files:
 
-| File                    | What it does                                                                                                                                                                                    |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/index.html`        | The page the browser loads first. Its `<body>` contains only `<app-root></app-root>`. Angular puts the root component there.                                                                    |
-| `src/main.ts`           | The **entry point**: the first code that runs. It starts Angular with the root component.                                                                                                       |
-| `src/app/app.config.ts` | Settings for the whole app, written as a list of **providers** (things Angular can give to components). [Chapter 14](14-services-and-dependency-injection.md) explains providers.               |
-| `src/app/app.routes.ts` | The list of **routes**: which component to show for which address. It starts empty. [Chapter 15](15-routing.md) explains it.                                                                    |
-| `src/app/app.spec.ts`   | Tests for the root component. Files that end in `.spec.ts` are tests.                                                                                                                           |
-| `src/styles.css`        | CSS for the whole app, not only one component.                                                                                                                                                  |
-| `public/`               | Files copied as they are into the app, such as images and the favicon.                                                                                                                          |
-| `angular.json`          | The CLI settings: where the source files are, which styles to load, and the settings of `build`, `serve` and `test`.                                                                            |
-| `package.json`          | The packages the project needs (`dependencies` for the app, `devDependencies` for tools) and **npm scripts**, short names for commands. `npm start` runs `ng serve`, `npm test` runs `ng test`. |
-| `tsconfig*.json`        | TypeScript compiler settings. The defaults are strict, which helps you find bugs early ([chapter 3](03-typescript-you-need.md#strict-null-checks-and-the--and--operators)).                     |
-| `node_modules/`         | All packages that npm downloaded. It is big. Never edit it and never copy it to another computer: run `npm install` there instead.                                                              |
+| File                                                      | What it does                                                                                                                                                                                    |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/index.html`                                          | The page the browser loads first. Its `<body>` contains only `<app-root></app-root>`. Angular puts the root component there.                                                                    |
+| `src/main.ts`                                             | The **entry point**: the first code that runs. It starts Angular with the root component.                                                                                                       |
+| [`src/app/app.config.ts`](examples/src/app/app.config.ts) | Settings for the whole app, written as a list of **providers** (things Angular can give to components). [Chapter 14](14-services-and-dependency-injection.md) explains providers.               |
+| [`src/app/app.routes.ts`](examples/src/app/app.routes.ts) | The list of **routes**: which component to show for which address. It starts empty. [Chapter 15](15-routing.md) explains it.                                                                    |
+| [`src/app/app.spec.ts`](examples/src/app/app.spec.ts)     | Tests for the root component. Files that end in `.spec.ts` are tests.                                                                                                                           |
+| `src/styles.css`                                          | CSS for the whole app, not only one component.                                                                                                                                                  |
+| `public/`                                                 | Files copied as they are into the app, such as images and the favicon.                                                                                                                          |
+| `angular.json`                                            | The CLI settings: where the source files are, which styles to load, and the settings of `build`, `serve` and `test`.                                                                            |
+| `package.json`                                            | The packages the project needs (`dependencies` for the app, `devDependencies` for tools) and **npm scripts**, short names for commands. `npm start` runs `ng serve`, `npm test` runs `ng test`. |
+| `tsconfig*.json`                                          | TypeScript compiler settings. The defaults are strict, which helps you find bugs early ([chapter 3](03-typescript-you-need.md#strict-null-checks-and-the--and--operators)).                     |
+| `node_modules/`                                           | All packages that npm downloaded. It is big. Never edit it and never copy it to another computer: run `npm install` there instead.                                                              |
 
 ### How the app starts
 
@@ -256,7 +262,7 @@ Your `main.ts` does not have the first line. The examples project needs it for t
 - `bootstrapApplication(App, appConfig)` starts Angular. **Bootstrapping** means starting the app. The first argument is the root component. The second is the settings from `app.config.ts`.
 - `.catch((err) => console.error(err))` writes an error to the browser console if the start fails.
 
-And this is `src/app/app.config.ts`, the same as in your project:
+And this is [`src/app/app.config.ts`](examples/src/app/app.config.ts), the same as in your project:
 
 <!-- example: src/app/app.config.ts -->
 
@@ -400,7 +406,7 @@ export class FirstAppFinished {
 
 Two things changed:
 
-1. The `import ... from '../welcome/welcome'` line loads the class from its file. The path has no `.ts` ending.
+1. The `import ... from '../welcome/welcome'` line loads the class from its file. The path has no `.ts` ending. In your project the path is `./welcome/welcome`: `./` means "start in this folder". In this guide the root component sits in its own folder, `finished-app/`, next to `welcome/`. So the path starts with `../`, which means "go up to the parent folder first".
 2. The class is added to `imports: [...]`, so the template may use `<app-welcome />`.
 
 We also changed the title to `'Amina'`. Use your own name.
@@ -451,6 +457,8 @@ Run the tests again. They all pass. [Chapter 19](19-testing.md) explains how tes
 
 ### Node.js is too old
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```shell
@@ -458,6 +466,8 @@ node --version
 # v18.19.1
 ng version
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 Node.js version v18.19.1 detected.
@@ -470,11 +480,15 @@ Install a Node.js version from the table in [step 1](#step-1-install-nodejs), op
 
 ### The `ng` command is not found
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```shell
 ng version
 ```
+
+<!-- prettier-ignore-end -->
 
 In bash you see:
 
@@ -486,12 +500,16 @@ Other terminals show a similar "not found" or "not recognized" message. The Angu
 
 ### Running `ng serve` outside the project folder
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```shell
 cd Documents
 ng serve
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 Error: This command is not available when running the Angular CLI outside a workspace.
@@ -522,6 +540,8 @@ ng serve --port 4201
 
 ### Using a component without importing it
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -535,6 +555,8 @@ export class App {
   protected readonly title = signal('Amina');
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 The template contains `<app-welcome />`, but `imports` does not list the Welcome component:
 
@@ -627,7 +649,7 @@ import {Component} from '@angular/core';
 export class FirstAppFooter {}
 ```
 
-The root component imports it:
+The root component imports it. In your project the new line in `app.ts` is `import { Footer } from './footer/footer';` and the list is `imports: [RouterOutlet, Welcome, Footer]`:
 
 <!-- example: src/app/02-install-and-first-app/try-it/app-with-footer/app-with-footer.ts#imports -->
 

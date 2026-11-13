@@ -1,7 +1,9 @@
+// #docregion imports
 import {Injector, signal} from '@angular/core';
 import {TestBed} from '@angular/core/testing';
 import {form} from '@angular/forms/signals';
 import {TestingLogin, TestingLoginForm, testingLoginSchema} from './login-form';
+// #enddocregion imports
 
 // #docregion isolated
 describe('login form rules', () => {

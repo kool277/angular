@@ -67,6 +67,8 @@ An **Observable** is a plan for producing values. Nothing happens until someone 
 <!-- example: src/app/18-rxjs-interop/basics/streams.ts#countdown -->
 
 ```ts
+import {Observable, Subject, filter, from, map} from 'rxjs';
+
 /** An Observable made by hand: it counts down once per second, then completes. */
 export function countdown(start: number): Observable<number> {
   return new Observable<number>((subscriber) => {
@@ -89,7 +91,10 @@ export function countdown(start: number): Observable<number> {
 - `subscriber.next(value)` sends a value. `subscriber.complete()` says "no more values". `subscriber.error(e)` would say "it failed".
 - The function that the plan returns is the **teardown**: it runs when the subscription ends, to clean up (here: stop the timer).
 
-To use it, you **subscribe**. You get a **subscription**, an object whose `unsubscribe()` stops the stream:
+To use it, you **subscribe**. You get a **subscription**, an object whose `unsubscribe()` stops the stream. A test shows it. Two things in it are new:
+
+- `vi` is a helper object from Vitest, the test tool of your project. Like `describe`, `it` and `expect`, it is a **global**: you use it without an import.
+- `vi.useFakeTimers()` turns on **fake timers**: from now on, `setInterval` and `setTimeout` use a fake clock that moves only when the test says so. `vi.advanceTimersByTime(3000)` moves it 3 seconds forward at once, so the test does not really wait. (`vi.advanceTimersByTimeAsync(ms)`, used later, does the same and also lets waiting Promises finish; use it with `await`.) [Testing](19-testing.md) explains more.
 
 <!-- example: src/app/18-rxjs-interop/basics/streams.spec.ts#subscribe -->
 
@@ -219,36 +224,96 @@ flowchart LR
 3. `switchMap(...)` sends a request for the text. If a new text comes while the old request is still running, `switchMap` unsubscribes from the old request, and `HttpClient` cancels it.
 4. `toSignal(..., { initialValue: [] })` turns the answers back into a signal for the template.
 
-The full component is in `src/app/18-rxjs-interop/search/tea-search.ts`. [HTTP and async data](17-http-and-async-data.md) shows `httpResource`, which also cancels old requests. Use the RxJS version when you need operators such as `debounceTime`.
+The full component is in [part 6](#6-a-realistic-example). [HTTP and async data](17-http-and-async-data.md) shows `httpResource`, which also cancels old requests. Use the RxJS version when you need operators such as `debounceTime`.
 
 ### `takeUntilDestroyed`: stop a subscription with the component
 
-When you call `subscribe` yourself, you must stop the subscription when the component goes away. Otherwise the callback keeps running for a component that is no longer on the page. The operator `takeUntilDestroyed()` stops it for you:
+When you call `subscribe` yourself, you must stop the subscription when the component goes away. Otherwise the callback keeps running for a component that is no longer on the page.
 
-<!-- example: src/app/18-rxjs-interop/notifications/notification-list.ts#constructor -->
+The example has a service that sends notifications through a Subject, like `RxChat` above:
+
+<!-- example: src/app/18-rxjs-interop/notifications/notifications.ts -->
 
 ```ts
-constructor() {
-  this.notifications.messages$.pipe(takeUntilDestroyed()).subscribe((message) => {
-    this.messages.update((messages) => [...messages, message]);
-  });
+import {Service} from '@angular/core';
+import {Subject} from 'rxjs';
+
+@Service()
+export class RxNotifications {
+  private readonly messages = new Subject<string>();
+  readonly messages$ = this.messages.asObservable();
+
+  send(text: string): void {
+    this.messages.next(text);
+  }
+
+  /** True while someone is subscribed. Tests use it to check clean-up. */
+  get hasListeners(): boolean {
+    return this.messages.observed;
+  }
+}
+```
+
+- `get hasListeners()` is a **getter**: other code reads it like a field (`notifications.hasListeners`), but the function runs on every read.
+- `observed` is `true` while at least one subscriber listens to the Subject. The test below uses it.
+
+A component that lists the notifications. The operator `takeUntilDestroyed()` stops its subscription:
+
+<!-- example: src/app/18-rxjs-interop/notifications/notification-list.ts#list -->
+
+```ts
+import {Component, DestroyRef, inject, signal} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {RxNotifications} from './notifications';
+
+@Component({
+  selector: 'app-rx-notification-list',
+  template: `
+    <ul>
+      @for (message of messages(); track $index) {
+        <li>{{ message }}</li>
+      }
+    </ul>
+  `,
+})
+export class RxNotificationList {
+  private readonly notifications = inject(RxNotifications);
+  protected readonly messages = signal<string[]>([]);
+
+  constructor() {
+    this.notifications.messages$.pipe(takeUntilDestroyed()).subscribe((message) => {
+      this.messages.update((messages) => [...messages, message]);
+    });
+  }
 }
 ```
 
 - `pipe(takeUntilDestroyed())` ends the stream when the component (or directive, or service) is destroyed.
 - Without an argument it needs an injection context, so call it in the constructor or a field initializer.
-- In a method, pass a `DestroyRef` that you injected in a field:
+- In a method, pass a `DestroyRef` that you injected in a field. A second component in the same file starts listening only after a click:
 
-<!-- example: src/app/18-rxjs-interop/notifications/notification-list.ts#method -->
+<!-- example: src/app/18-rxjs-interop/notifications/notification-list.ts#late -->
 
 ```ts
-private readonly destroyRef = inject(DestroyRef);
+@Component({
+  selector: 'app-rx-late-listener',
+  template: `
+    <button type="button" (click)="startListening()">Start listening</button>
+    <p>{{ last() }}</p>
+  `,
+})
+export class RxLateListener {
+  private readonly notifications = inject(RxNotifications);
+  protected readonly last = signal('Not listening yet.');
 
-startListening(): void {
-  this.last.set('Listening…');
-  this.notifications.messages$
-    .pipe(takeUntilDestroyed(this.destroyRef))
-    .subscribe((message) => this.last.set(message));
+  private readonly destroyRef = inject(DestroyRef);
+
+  startListening(): void {
+    this.last.set('Listening…');
+    this.notifications.messages$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((message) => this.last.set(message));
+  }
 }
 ```
 
@@ -275,25 +340,64 @@ You do not need `takeUntilDestroyed` for `toSignal`, the `async` pipe or `rxReso
 
 ### `outputFromObservable` and `outputToObservable`
 
-An output ([chapter 8](08-inputs-outputs-model.md)) can come from an Observable. `outputFromObservable` creates an output that fires whenever the Observable gives a value:
+An output ([chapter 8](08-inputs-outputs-model.md)) can come from an Observable. `outputFromObservable` creates an output that fires whenever the Observable gives a value. `RxWordInput` keeps the text of its input in a signal and makes an output from it; `RxWordDemo` uses it:
 
-<!-- example: src/app/18-rxjs-interop/outputs/word-input.ts#output -->
+<!-- example: src/app/18-rxjs-interop/outputs/word-input.ts -->
 
 ```ts
-/** Fires 300 ms after the user stops typing, with the text (never empty). */
-readonly settled = outputFromObservable(
-  toObservable(this.text).pipe(
-    debounceTime(300),
-    filter((text) => text !== ''),
-  ),
-);
+import {Component, signal} from '@angular/core';
+import {outputFromObservable, toObservable} from '@angular/core/rxjs-interop';
+import {debounceTime, filter} from 'rxjs';
+
+@Component({
+  selector: 'app-rx-word-input',
+  template: `<input #box placeholder="Type a tea name" (input)="text.set(box.value)" />`,
+})
+export class RxWordInput {
+  protected readonly text = signal('');
+
+  /** Fires 300 ms after the user stops typing, with the text (never empty). */
+  readonly settled = outputFromObservable(
+    toObservable(this.text).pipe(
+      debounceTime(300),
+      filter((text) => text !== ''),
+    ),
+  );
+}
+
+@Component({
+  selector: 'app-rx-word-demo',
+  imports: [RxWordInput],
+  template: `
+    <app-rx-word-input (settled)="last.set($event)" />
+    <p>You stopped at: {{ last() }}</p>
+  `,
+})
+export class RxWordDemo {
+  protected readonly last = signal('');
+}
 ```
 
 - Like `output()`, it may only be used to set a field of a component or directive.
 - The parent listens as usual: `<app-rx-word-input (settled)="last.set($event)" />`.
 - If you can call `emit` yourself, a plain `output()` is simpler.
 
-`outputToObservable(output)` does the opposite: it gives an Observable of an output's values, so you can use operators on them. Here a test uses it:
+`outputToObservable(output)` does the opposite: it gives an Observable of an output's values, so you can use operators on them. Here a test uses it. The tests of this file turn on fake timers before each test, turn them off after it, and type with a small helper function:
+
+<!-- example: src/app/18-rxjs-interop/outputs/word-input.spec.ts#helper -->
+
+```ts
+beforeEach(() => vi.useFakeTimers());
+afterEach(() => vi.useRealTimers());
+
+async function type(input: HTMLInputElement, text: string) {
+  input.value = text;
+  input.dispatchEvent(new Event('input'));
+  await vi.advanceTimersByTimeAsync(50);
+}
+```
+
+The test:
 
 <!-- example: src/app/18-rxjs-interop/outputs/word-input.spec.ts#to-observable -->
 
@@ -318,13 +422,56 @@ For a plain callback, the output's own `subscribe` method is enough.
 
 [Chapter 17](17-http-and-async-data.md) introduced `rxResource`: a resource whose `stream` function returns an Observable. A stream can give **many** values, and every value updates `value()`. Here a fake price feed sends a new price every second:
 
-<!-- example: src/app/18-rxjs-interop/live-price/live-price.ts#resource -->
+<!-- example: src/app/18-rxjs-interop/live-price/price-feed.ts -->
 
 ```ts
-protected readonly price = rxResource({
-  params: () => this.teaId(),
-  stream: ({params}) => this.feed.watch(params),
-});
+import {Service} from '@angular/core';
+import {Observable, map, timer} from 'rxjs';
+
+const BASE_PRICES: Record<number, number> = {1: 4, 2: 3, 3: 5};
+
+/** Pretends to be a live price feed: a new price every second. */
+@Service()
+export class RxPriceFeed {
+  watch(teaId: number): Observable<number> {
+    return timer(0, 1000).pipe(map((tick) => BASE_PRICES[teaId] + (tick % 3) / 10));
+  }
+}
+```
+
+- `Record<number, number>` is the type of an object whose keys and values are numbers.
+- `timer(0, 1000)` from RxJS gives `0` at once, then `1`, `2`, `3`… once per second. `map` turns each number into a price.
+
+The component:
+
+<!-- example: src/app/18-rxjs-interop/live-price/live-price.ts -->
+
+```ts
+import {Component, inject, signal} from '@angular/core';
+import {rxResource} from '@angular/core/rxjs-interop';
+import {RxPriceFeed} from './price-feed';
+
+@Component({
+  selector: 'app-rx-live-price',
+  template: `
+    <button type="button" (click)="teaId.set(1)">Green tea</button>
+    <button type="button" (click)="teaId.set(3)">Mint tea</button>
+    @if (price.hasValue()) {
+      <p>Price now: {{ price.value() }} €</p>
+    } @else {
+      <p>Waiting for the first price…</p>
+    }
+  `,
+})
+export class RxLivePrice {
+  private readonly feed = inject(RxPriceFeed);
+  protected readonly teaId = signal(1);
+
+  protected readonly price = rxResource({
+    params: () => this.teaId(),
+    stream: ({params}) => this.feed.watch(params),
+  });
+}
 ```
 
 - When `teaId` changes, `rxResource` unsubscribes from the old stream and subscribes to the new one.
@@ -380,7 +527,7 @@ export class RxTeaSearch {
 }
 ```
 
-The test uses Vitest's **fake timers**: `vi.useFakeTimers()` replaces the clock, and `vi.advanceTimersByTimeAsync(ms)` moves time forward without waiting. So the test checks the 300 ms wait in a moment ([Testing](19-testing.md) explains this):
+The test uses fake timers ([part 5](#observables-in-two-minutes)), so it checks the 300 ms wait in a moment:
 
 <!-- example: src/app/18-rxjs-interop/search/tea-search.spec.ts -->
 
@@ -448,13 +595,17 @@ describe('RxTeaSearch', () => {
 
 ### Calling `toSignal` in a method
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
 start(): void {
-  const seconds = toSignal(interval(1000), { initialValue: 0 });
+  const seconds = toSignal(interval(1000), {initialValue: 0});
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 A click on the button that calls `start()` gives:
 
@@ -483,11 +634,17 @@ export class RxTicker {
 
 ### Forgetting the initial value
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
-protected readonly width = toSignal(fromEvent(window, 'resize').pipe(map(() => window.innerWidth)));
+protected readonly width = toSignal(
+  fromEvent(window, 'resize').pipe(map(() => window.innerWidth)),
+);
 ```
+
+<!-- prettier-ignore-end -->
 
 With `@if (width() < 600)` in the template, the build fails:
 
@@ -497,31 +654,18 @@ With `@if (width() < 600)` in the template, the build fails:
 
 Before the first `resize` event the signal has no value, so its type is `number | undefined`. Give an `initialValue`:
 
-<!-- example: src/app/18-rxjs-interop/exercise/window-width.ts -->
+<!-- example: src/app/18-rxjs-interop/exercise/window-width.ts#width -->
 
 ```ts
-import {Component} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
-import {fromEvent, map} from 'rxjs';
-
-@Component({
-  selector: 'app-rx-window-width',
-  template: `
-    <p>The window is {{ width() }} pixels wide.</p>
-    @if (width() < 600) {
-      <p>Small screen layout</p>
-    }
-  `,
-})
-export class RxWindowWidth {
-  protected readonly width = toSignal(
-    fromEvent(window, 'resize').pipe(map(() => window.innerWidth)),
-    {initialValue: window.innerWidth},
-  );
-}
+protected readonly width = toSignal(
+  fromEvent(window, 'resize').pipe(map(() => window.innerWidth)),
+  {initialValue: window.innerWidth},
+);
 ```
 
 ### `takeUntilDestroyed()` without a `DestroyRef` in a method
+
+<!-- prettier-ignore-start -->
 
 <!-- wrong -->
 
@@ -530,6 +674,8 @@ startListening(): void {
   this.notifications.messages$.pipe(takeUntilDestroyed()).subscribe(() => {});
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 Error: NG0203: takeUntilDestroyed() can only be used within an injection context such as a constructor, a factory function, a field initializer, or a function used with `runInInjectionContext`. Find more at https://v22.angular.dev/errors/NG0203
@@ -552,6 +698,8 @@ startListening(): void {
 
 ### Subscribing without stopping
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -561,6 +709,8 @@ constructor() {
   });
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 There is no error. But the subscription lives on after the component is destroyed. Each time the user opens the page again, one more subscription is added, the callback runs several times, and memory grows. Add `takeUntilDestroyed()`, or use `toSignal`:
 
@@ -580,7 +730,9 @@ Write a component `RxWindowWidth` that shows "The window is N pixels wide." and,
 
 Hints: `fromEvent(window, 'resize')` from RxJS gives an Observable of resize events. `window.innerWidth` is the width. Use `map` and `toSignal`.
 
-Test it: set `window.innerWidth`, send `window.dispatchEvent(new Event('resize'))`, wait, and check the text. Also check that the listener is removed when the component is destroyed.
+Test it: set `window.innerWidth`, send `window.dispatchEvent(new Event('resize'))`, wait, and check the text.
+
+Also check that the listener is removed when the component is destroyed. For this you need a **spy**: an object that records the calls of a function. `const spy = vi.spyOn(window, 'removeEventListener')` puts a spy on that method of `window` (the method still works). After `fixture.destroy()`, `expect(spy).toHaveBeenCalledWith('resize', expect.any(Function), undefined)` checks that the method was called with these arguments; `expect.any(Function)` accepts any function. At the end, `spy.mockRestore()` removes the spy. [Testing](19-testing.md#fakes-and-spies) explains spies in depth.
 
 <details><summary>Solution</summary>
 

@@ -107,7 +107,94 @@ flowchart TD
 
 When the component is removed: `ngOnDestroy`, and the callbacks given to `DestroyRef.onDestroy`.
 
-The example `src/app/13-lifecycle/hook-log/hook-log.ts` has every hook and writes its name into a list. Its test proves the order above:
+This example has every hook and writes its name into a list. The interface of each hook is the hook's name without `ng` (`ngDoCheck` → `DoCheck`). A class can implement several interfaces, separated by commas. The demo component around it can show and hide it, and change its input:
+
+<!-- example: src/app/13-lifecycle/hook-log/hook-log.ts -->
+
+```ts
+import {
+  AfterContentChecked,
+  AfterContentInit,
+  AfterViewChecked,
+  AfterViewInit,
+  Component,
+  DoCheck,
+  OnChanges,
+  OnDestroy,
+  OnInit,
+  afterEveryRender,
+  afterNextRender,
+  input,
+  signal,
+} from '@angular/core';
+
+export const hookLog: string[] = [];
+
+@Component({
+  selector: 'app-life-hook-log',
+  template: `<p>{{ label() }}</p>`,
+})
+export class LifeHookLog
+  implements
+    OnChanges,
+    OnInit,
+    DoCheck,
+    AfterContentInit,
+    AfterContentChecked,
+    AfterViewInit,
+    AfterViewChecked,
+    OnDestroy
+{
+  readonly label = input('');
+
+  constructor() {
+    hookLog.push('constructor');
+    afterNextRender(() => hookLog.push('afterNextRender'));
+    afterEveryRender(() => hookLog.push('afterEveryRender'));
+  }
+
+  ngOnChanges(): void {
+    hookLog.push('ngOnChanges');
+  }
+  ngOnInit(): void {
+    hookLog.push('ngOnInit');
+  }
+  ngDoCheck(): void {
+    hookLog.push('ngDoCheck');
+  }
+  ngAfterContentInit(): void {
+    hookLog.push('ngAfterContentInit');
+  }
+  ngAfterContentChecked(): void {
+    hookLog.push('ngAfterContentChecked');
+  }
+  ngAfterViewInit(): void {
+    hookLog.push('ngAfterViewInit');
+  }
+  ngAfterViewChecked(): void {
+    hookLog.push('ngAfterViewChecked');
+  }
+  ngOnDestroy(): void {
+    hookLog.push('ngOnDestroy');
+  }
+}
+
+@Component({
+  selector: 'app-life-hook-log-demo',
+  imports: [LifeHookLog],
+  template: `
+    @if (shown()) {
+      <app-life-hook-log [label]="label()" />
+    }
+  `,
+})
+export class LifeHookLogDemo {
+  readonly shown = signal(true);
+  readonly label = signal('first');
+}
+```
+
+`hookLog` is a plain array outside the class, so the test can read it. The test proves the order above:
 
 <!-- example: src/app/13-lifecycle/hook-log/hook-log.spec.ts -->
 
@@ -395,6 +482,8 @@ describe('LifeEditableTitle with LifeAutofocus', () => {
 
 ### Reading an input in the constructor
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -407,6 +496,8 @@ export class TmpPrice {
   }
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] NG8118: `price` is a required `input` and does not have a value in this context. [plugin angular-compiler]
@@ -439,6 +530,8 @@ export class LifePriceTag {
 
 ### A typo in a hook name
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -448,6 +541,8 @@ export class TmpWrong1 implements OnInit {
   }
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] TS2420: Class 'TmpWrong1' incorrectly implements interface 'OnInit'.
@@ -495,6 +590,8 @@ export class LifeClockDemo {
 
 ### Calling `afterNextRender` in a method
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -503,6 +600,8 @@ startEditing() {
   afterNextRender(() => this.element.nativeElement.querySelector('input')?.focus());
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 When the user clicks, the console shows:
 
@@ -528,6 +627,8 @@ export class LifeAutofocus {
 
 ### Forgetting to stop what you started
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -535,6 +636,8 @@ ngOnInit(): void {
   setInterval(() => this.seconds.update((s) => s + 1), 1000);
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 No error. But each time the clock is shown and hidden, one more timer keeps running in the background. The app gets slower and uses more memory the longer it is open. Fix: stop the timer in `ngOnDestroy` or with `DestroyRef`:
 

@@ -61,10 +61,13 @@ import {Component} from '@angular/core';
   `,
 })
 export class PipesBuiltIn {
+  // #docregion data
   city = 'Bukhara';
+  // Date.UTC(year, month, day, hours, minutes). Months start at 0, so 2 is March.
   opening = new Date(Date.UTC(2026, 2, 21, 9, 30)); // 21 March 2026, 09:30 UTC
   distance = 1234.5678;
   share = 0.256;
   price = 42;
   ticket = {visitor: 'Aziz', adult: true, seat: 12};
+  // #enddocregion data
 }

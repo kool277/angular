@@ -8,7 +8,7 @@ import {Todo} from './todo';
       <input type="checkbox" [checked]="todo().done" (change)="toggled.emit(todo().id)" />
       {{ todo().title }}
     </label>
-    <button (click)="removed.emit(todo().id)">Delete</button>
+    <button type="button" (click)="removed.emit(todo().id)">Delete</button>
   `,
   styles: `
     .done {

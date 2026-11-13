@@ -12,8 +12,10 @@ import {fromEvent, map} from 'rxjs';
   `,
 })
 export class RxWindowWidth {
+  // #docregion width
   protected readonly width = toSignal(
     fromEvent(window, 'resize').pipe(map(() => window.innerWidth)),
     {initialValue: window.innerWidth},
   );
+  // #enddocregion width
 }

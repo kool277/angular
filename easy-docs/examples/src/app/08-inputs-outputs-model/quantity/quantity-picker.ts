@@ -3,9 +3,9 @@ import {Component, model, signal} from '@angular/core';
 @Component({
   selector: 'app-quantity-picker',
   template: `
-    <button (click)="change(-1)">−</button>
+    <button type="button" (click)="change(-1)">−</button>
     <span>{{ value() }}</span>
-    <button (click)="change(1)">+</button>
+    <button type="button" (click)="change(1)">+</button>
   `,
 })
 export class InputsQuantityPicker {
@@ -25,7 +25,7 @@ export class InputsQuantityPicker {
     <!-- #docregion two-way -->
     <app-quantity-picker [(value)]="quantity" />
     <p class="total">Total: {{ quantity() * 2 }} €</p>
-    <button class="ten" (click)="quantity.set(10)">Order 10</button>
+    <button type="button" class="ten" (click)="quantity.set(10)">Order 10</button>
     <!-- #enddocregion two-way -->
     <!-- #docregion change-event -->
     <app-quantity-picker [value]="3" (valueChange)="lastChange = $event" />

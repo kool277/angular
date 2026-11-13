@@ -26,7 +26,10 @@ describe('AnimToastList', () => {
     Object.assign(element, {animate});
     const event = {target: element, animationComplete: vi.fn()};
 
+    // The fake event has only the two fields that slideAway() uses. `as unknown as`
+    // tells TypeScript to accept it as a full AnimationCallbackEvent.
     component.slideAway(event as unknown as AnimationCallbackEvent);
+    // Let the `.then()` callback run: it runs after the current code has finished.
     await Promise.resolve();
 
     expect(animate).toHaveBeenCalledTimes(1);

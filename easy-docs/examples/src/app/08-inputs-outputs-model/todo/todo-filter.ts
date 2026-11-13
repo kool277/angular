@@ -5,7 +5,7 @@ import {TodoFilter} from './todo';
   selector: 'app-todo-filter',
   template: `
     @for (option of options; track option) {
-      <button [class.active]="filter() === option" (click)="filter.set(option)">
+      <button type="button" [class.active]="filter() === option" (click)="filter.set(option)">
         {{ option }}
       </button>
     }

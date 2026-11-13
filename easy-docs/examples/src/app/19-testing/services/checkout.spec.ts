@@ -1,6 +1,8 @@
+// #docregion imports
 import {TestBed} from '@angular/core/testing';
 import {TestingCheckout} from './checkout';
 import {TestingTaxRates} from './tax-rates';
+// #enddocregion imports
 
 describe('TestingCheckout', () => {
   // #docregion real

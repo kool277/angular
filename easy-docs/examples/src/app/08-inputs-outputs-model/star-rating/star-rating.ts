@@ -4,7 +4,7 @@ import {Component, output, signal} from '@angular/core';
   selector: 'app-star-rating',
   template: `
     @for (star of stars; track star) {
-      <button (click)="rate(star)">{{ star }}★</button>
+      <button type="button" (click)="rate(star)">{{ star }}★</button>
     }
   `,
 })

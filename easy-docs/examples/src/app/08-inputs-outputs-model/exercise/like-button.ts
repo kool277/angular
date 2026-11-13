@@ -1,9 +1,9 @@
 import {Component, computed, input, model, signal} from '@angular/core';
 
 @Component({
-  selector: 'app-like-button',
+  selector: 'app-like-toggle',
   template: `
-    <button [class.liked]="liked()" (click)="liked.set(!liked())">
+    <button type="button" [class.liked]="liked()" (click)="liked.set(!liked())">
       {{ liked() ? '♥' : '♡' }} {{ label() }}
     </button>
   `,
@@ -17,8 +17,8 @@ export class InputsLikeButton {
   selector: 'app-like-demo',
   imports: [InputsLikeButton],
   template: `
-    <app-like-button label="Plov recipe" [(liked)]="likesPlov" />
-    <app-like-button label="Somsa recipe" [(liked)]="likesSomsa" />
+    <app-like-toggle label="Plov recipe" [(liked)]="likesPlov" />
+    <app-like-toggle label="Somsa recipe" [(liked)]="likesSomsa" />
     <p>You like {{ count() }} recipes.</p>
   `,
 })

@@ -5,7 +5,7 @@ import {Component, EventEmitter, Input, Output} from '@angular/core';
   selector: 'app-old-panel',
   template: `
     <h3>{{ title }}</h3>
-    <button (click)="closed.emit()">Close</button>
+    <button type="button" (click)="closed.emit()">Close</button>
   `,
 })
 export class InputsOldPanel {

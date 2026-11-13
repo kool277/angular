@@ -3,8 +3,8 @@
   @for (line of lines(); track line.id) {
     <li>
       {{ line.name }}: {{ line.quantity }} × {{ line.price }} €
-      <button (click)="changeQuantity(line.id, 1)">+</button>
-      <button (click)="changeQuantity(line.id, -1)">−</button>
+      <button type="button" (click)="changeQuantity(line.id, 1)">+</button>
+      <button type="button" (click)="changeQuantity(line.id, -1)">−</button>
     </li>
   } @empty {
     <li>Your cart is empty.</li>
@@ -16,4 +16,4 @@
 } @else {
   <p class="delivery">Spend {{ 30 - total() }} € more for free delivery.</p>
 }
-<button class="backpack" (click)="addBackpack()">Add a backpack</button>
+<button type="button" class="backpack" (click)="addBackpack()">Add a backpack</button>

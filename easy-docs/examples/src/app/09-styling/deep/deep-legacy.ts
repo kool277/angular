@@ -8,7 +8,7 @@ export class StylingHelpLink {}
 
 // Older code. Avoid ::ng-deep in new code.
 @Component({
-  selector: 'app-footer',
+  selector: 'app-page-footer',
   imports: [StylingHelpLink],
   template: `<footer><app-help-link /></footer>`,
   styles: `

@@ -28,7 +28,11 @@ This is the last chapter. It covers five tools that many apps never need, but th
 
 ### A component as a custom element
 
-A **custom element** (also called a **web component**) is an HTML tag that you define with JavaScript, using a browser standard. Angular Elements, from the package `@angular/elements`, wraps an Angular component into such a tag.
+A **custom element** (also called a **web component**) is an HTML tag that you define with JavaScript, using a browser standard. Angular Elements, from the package `@angular/elements`, wraps an Angular component into such a tag. A new app does not have this package. Install it first:
+
+```shell
+npm install @angular/elements@22.2
+```
 
 An ordinary component:
 
@@ -38,7 +42,7 @@ An ordinary component:
 import {Component, input, output} from '@angular/core';
 
 @Component({
-  selector: 'app-greeting-card',
+  selector: 'app-elements-greeting-card',
   template: `
     <p>Welcome, {{ name() }}!</p>
     <button (click)="greeted.emit(name())">Say hello</button>
@@ -108,7 +112,37 @@ describe('museum-greeting custom element', () => {
 - The output `greeted` becomes a DOM `CustomEvent` called `greeted`; its `detail` holds the emitted value.
 - `ApplicationRef.whenStable()` waits until Angular has rendered.
 
-In a real app you call `defineGreetingElement(inject(Injector))` once at startup, for example in your root component or in a small `main.ts` that only defines elements.
+In a real app you call `defineGreetingElement(...)` once at startup. In an Angular app, call it in the constructor of your root component with `defineGreetingElement(inject(Injector))`. A page that is **not** an Angular app, but wants to use the tag, needs a small `main.ts` that starts Angular without a root component. `createApplication()` from `@angular/platform-browser` does this. It returns the `ApplicationRef`, and its `injector` is what `createCustomElement` needs:
+
+<!-- example: src/app/27-smaller-topics/elements/start-elements.ts -->
+
+```ts
+import {createApplication} from '@angular/platform-browser';
+import {defineGreetingElement} from './define-elements';
+
+/** In a page that only needs the custom elements, main.ts calls this function. */
+export async function startElements() {
+  const app = await createApplication();
+  defineGreetingElement(app.injector);
+  return app;
+}
+```
+
+`main.ts` then contains only the line `startElements();` (with its import). The test:
+
+<!-- example: src/app/27-smaller-topics/elements/start-elements.spec.ts -->
+
+```ts
+import {startElements} from './start-elements';
+
+describe('startElements', () => {
+  it('starts Angular without a root component and defines the tag', async () => {
+    const app = await startElements();
+    expect(customElements.get('museum-greeting')).toBeDefined();
+    app.destroy();
+  });
+});
+```
 
 ## 5. How it works
 
@@ -124,7 +158,7 @@ flowchart LR
 
 - The element starts its component when it is added to the page and destroys it when it is removed.
 - Inputs become attributes in dash-case: an input `ticketPrice` is the attribute `ticket-price`. They also become properties: `element.ticketPrice = 12`.
-- Do not use the component's selector (`app-greeting-card`) as the tag name. If an Angular template also uses that selector, Angular creates two components on one element.
+- Do not use the component's selector (`app-elements-greeting-card`) as the tag name. If an Angular template also uses that selector, Angular creates two components on one element.
 - The page that uses the element must load your built JavaScript. Angular itself is part of that file, so one small element still costs the size of Angular.
 
 ### Service workers
@@ -139,7 +173,7 @@ ng add @angular/pwa
 
 This command installs `@angular/service-worker`, adds the provider to `app.config.ts`, turns on `serviceWorker` in `angular.json`, adds a **web app manifest** (`manifest.webmanifest`: name, colors and icons, so users can install the app like a phone app; such an app is called a **progressive web app**, **PWA**) and icons, and creates `ngsw-config.json`, the file that says which files to cache. Each production build then writes `ngsw.json`, a list of all files with their hashes.
 
-The provider looks like this:
+`ng add` has already written this provider into your `app.config.ts`, so you do not add it again. It looks like this (the example keeps it in its own file, only so that the test can use it):
 
 <!-- example: src/app/27-smaller-topics/service-worker/sw.config.ts -->
 
@@ -236,7 +270,7 @@ ng generate web-worker app
 This command creates `src/app/app.worker.ts`, adds a `tsconfig.worker.json` and the option `webWorkerTsConfig` to `angular.json`, and adds sample code to `app.ts`:
 
 - The worker file listens with `addEventListener('message', ({ data }) => ...)` and answers with `postMessage(result)`.
-- The component creates the worker with `new Worker(new URL('./app.worker', import.meta.url))`, sends data with `worker.postMessage(data)` and receives the answer in `worker.onmessage`.
+- The component creates the worker with `new Worker(new URL('./app.worker', import.meta.url))` (`import.meta.url` is the address of the current file, so the browser finds the worker file next to it), sends data with `worker.postMessage(data)` and receives the answer in `worker.onmessage`.
 
 ```mermaid
 sequenceDiagram
@@ -487,6 +521,8 @@ To move a whole project, the CLI has a migration that does most of the work: `ng
 
 ### Importing a non-standalone component directly
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -497,6 +533,8 @@ To move a whole project, the CLI has a migration that does most of the work: `ng
 })
 export class ModulesBadgePage {}
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] NG2011: The component 'ModulesOldBadge' appears in 'imports', but is not standalone and cannot be imported directly. [plugin angular-compiler]
@@ -521,12 +559,16 @@ export class ModulesBadgePage {}
 
 ### Defining the same custom element twice
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
 customElements.define('museum-greeting', createCustomElement(ElementsGreetingCard, {injector}));
 customElements.define('museum-greeting', createCustomElement(ElementsGreetingCard, {injector}));
 ```
+
+<!-- prettier-ignore-end -->
 
 In the jsdom test environment this prints:
 
@@ -553,6 +595,8 @@ export function defineGreetingElement(injector: Injector) {
 
 ### Forgetting to update the list after a drop
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -560,6 +604,8 @@ drop(event: CdkDragDrop<string[]>) {
   console.log('dropped', event.currentIndex);
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 There is no error. You can drag the item, but when you let go it jumps back to its old place. The CDK only animates; your code must change the data. Use `moveItemInArray` (or `transferArrayItem`) and set the signal, as in `DndStopList.drop`.
 
@@ -570,6 +616,8 @@ With `enabled: !isDevMode()`, the service worker is off during `ng serve`, and `
 ## 8. Try it yourself
 
 Build a board with two lists, "Ideas" and "Today". The user can reorder items inside a list and move an item from one list to the other. Use `CdkDropListGroup` (it connects all lists inside it), `[cdkDropListData]` to tell each list which array it shows, and `transferArrayItem` for moves between lists. Test both kinds of move by calling the drop handler.
+
+Hints: the drop event also has `previousContainer` and `container`, the list where the item came from and the list where it was dropped. Their `data` is the array from `[cdkDropListData]`. In a test, build a fake event with only the fields your handler reads, and write `as unknown as CdkDragDrop<string[]>`: `as unknown` first, because the fake object is too different from a real event for a direct `as` ([chapter 3](03-typescript-you-need.md)).
 
 <details><summary>Solution</summary>
 

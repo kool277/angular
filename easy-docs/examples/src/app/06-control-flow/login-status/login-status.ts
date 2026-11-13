@@ -8,7 +8,7 @@ import {Component} from '@angular/core';
     } @else {
       <p>Please log in.</p>
     }
-    <button (click)="toggle()">Log in / Log out</button>
+    <button type="button" (click)="toggle()">Log in / Log out</button>
   `,
 })
 export class ControlFlowLoginStatus {

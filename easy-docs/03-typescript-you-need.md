@@ -53,7 +53,9 @@ export function greet(name) {
 
 ### How to try the examples
 
-Each piece of code in this chapter is a real file in `easy-docs/examples/src/app/03-typescript-you-need/`, with a test next to it. You can also paste code into the [TypeScript playground](https://www.typescriptlang.org/play) in your browser. It shows errors and the resulting JavaScript.
+Each piece of code in this chapter is a real file in `examples/src/app/03-typescript-you-need/`, with a test next to it. You can also paste code into the [TypeScript playground](https://www.typescriptlang.org/play) in your browser. It shows errors and the resulting JavaScript.
+
+You can also try the code in the project from [chapter 2](02-install-and-first-app.md). Create a folder `src/app/ts/`, put the code into a file there (for example `src/app/ts/greet.ts`), and run `ng build`. The build checks the types of every `.ts` file in `src/`, even files that nothing imports, and prints the errors it finds.
 
 ## 5. How it works
 
@@ -170,10 +172,6 @@ export function totalPrice(products: Product[]): number {
   }
   return total;
 }
-
-export function findProduct(products: Product[], id: ProductId) {
-  return products.find((product) => product.id === id);
-}
 ```
 
 If an object misses a property, or a property has the wrong type, the build fails. An interface produces no JavaScript at all. It exists only for the type check.
@@ -189,6 +187,16 @@ export type Point = {
   x: number;
   y: number;
 };
+```
+
+`ProductId` is now another name for `number`. Use it where a value is the id of a product. The function below finds a product by its id. (`products.find(...)` is the normal JavaScript array method that returns the first item for which the arrow function returns `true`; [arrow functions](#arrow-functions) come later in this chapter.)
+
+<!-- example: src/app/03-typescript-you-need/interfaces/product.ts#find -->
+
+```ts
+export function findProduct(products: Product[], id: ProductId) {
+  return products.find((product) => product.id === id);
+}
 ```
 
 For object shapes, `interface` and `type` work almost the same. Angular code mostly uses `interface` for objects and `type` for everything else, such as the union types in the next section.
@@ -294,7 +302,7 @@ export class Counter {
 - `increase()` is a **method**: a function that belongs to the object.
 - Inside the class, `this` means "this object". `this.count` is the `count` field of the object.
 
-Each object created from a class is an **instance** of the class, and each instance has its own data:
+Each object created from a class is an **instance** of the class, and each instance has its own data. The test below shows it. You learn tests in [chapter 19](19-testing.md); for now, read it like this: `describe` gives a group of checks a name, `it` names one check, and `expect(a).toBe(b)` checks that `a` equals `b`.
 
 <!-- example: src/app/03-typescript-you-need/classes/counter.spec.ts -->
 
@@ -347,8 +355,8 @@ export class BankAccount {
 
 - `readonly`: the field can get a value only where it is declared or in the constructor. After that, nobody can change it.
 - `private`: only code inside this class can use the field. Other code cannot read `account.balance`. It must call `deposit()`, which checks the amount.
-- `protected`: like `private`, but classes that extend this class may use it too.
-- Members with none of these words are **public**: any code can use them.
+- `protected`: like `private`, but classes that extend this class (see below) may use it too.
+- Fields and methods are together called the **members** of a class. Members with none of these words are **public**: any code can use them.
 
 These words exist only for the type check. They protect you from mistakes; they are not a security feature.
 
@@ -400,6 +408,8 @@ Angular uses generics a lot. You met `signal` in chapter 2. It creates a box for
 <!-- example: src/app/03-typescript-you-need/generics/generics.ts#signal -->
 
 ```ts
+import {signal} from '@angular/core';
+
 export const count = signal<number>(0);
 export const selectedName = signal<string | null>(null);
 ```
@@ -431,7 +441,9 @@ export class PizzaRecipe {
 }
 ```
 
-`@Label('A recipe for pizza')` calls `Label`, which stores the text for the class `PizzaRecipe` in a `Map`. The class itself works as before.
+`@Label('A recipe for pizza')` attaches the text `'A recipe for pizza'` to the class `PizzaRecipe`. The class itself works as before.
+
+You do not need to understand how `Label` is written (it is a function that returns another function and stores data in a JavaScript `Map`). Look only at how it is used:
 
 `@Component({...})` works in a similar way: it attaches the selector, the template and the other settings to the class, and Angular reads them later. You will use Angular's decorators, but you will almost never write your own.
 
@@ -718,11 +730,15 @@ TypeScript errors have a code like `TS2322` and a message. The build shows the f
 
 ### Passing a value of the wrong type
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
 greet(42);
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] TS2345: Argument of type 'number' is not assignable to parameter of type 'string'. [plugin angular-compiler]
@@ -732,12 +748,16 @@ greet(42);
 
 ### Assigning a value of the wrong type
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
 let visitors = 0;
 visitors = 'many';
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] TS2322: Type 'string' is not assignable to type 'number'. [plugin angular-compiler]
@@ -747,11 +767,15 @@ visitors = 'many';
 
 ### Forgetting a property of an interface
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
 const milk: Product = {id: 3, name: 'Milk'};
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] TS2741: Property 'price' is missing in type '{ id: number; name: string; }' but required in type 'Product'. [plugin angular-compiler]
@@ -761,6 +785,8 @@ Add the missing property, or make it optional in the interface (`price?: number`
 
 ### Using a value that may be `undefined`
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -768,6 +794,8 @@ export function cityOf(name: string): string {
   return findPerson(name).address.city;
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] TS2532: Object is possibly 'undefined'. [plugin angular-compiler]
@@ -792,6 +820,8 @@ export function cityOf(name: string): string {
 
 ### Silencing the check with `!` when you are wrong
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
@@ -799,6 +829,8 @@ export function bekzodsCity(): string {
   return findPerson('Bekzod')!.address!.city;
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 The build passes, because `!` turns the check off. But Bekzod has no address, so the code crashes when it runs:
 
@@ -810,12 +842,16 @@ Use `!` only when you are sure. Otherwise use a check, or `?.` with `??` for a f
 
 ### Changing a `readonly` field
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
 const account = new BankAccount('Amina');
 account.owner = 'Bekzod';
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] TS2540: Cannot assign to 'owner' because it is a read-only property. [plugin angular-compiler]
@@ -825,12 +861,16 @@ A `readonly` field gets its value once. Create a new object instead, or remove `
 
 ### Reading a `private` field from outside
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```ts
 const account = new BankAccount('Amina');
 console.log(account.balance);
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] TS2341: Property 'balance' is private and only accessible within class 'BankAccount'. [plugin angular-compiler]

@@ -38,7 +38,7 @@ import {Component} from '@angular/core';
     } @else {
       <p>Please log in.</p>
     }
-    <button (click)="toggle()">Log in / Log out</button>
+    <button type="button" (click)="toggle()">Log in / Log out</button>
   `,
 })
 export class ControlFlowLoginStatus {
@@ -90,20 +90,33 @@ The condition is any template expression. Angular treats it like JavaScript does
 You can chain any number of `@else if` blocks and at most one `@else` at the end. Angular shows the first branch whose condition is true:
 
 <!-- prettier-ignore-start -->
-<!-- example: src/app/06-control-flow/grade/grade.ts#chain -->
+<!-- example: src/app/06-control-flow/grade/grade.ts -->
 
 ```html
-@if (score >= 90) {
-  <p class="result">Excellent!</p>
-} @else if (score >= 50) {
-  <p class="result">You passed.</p>
-} @else {
-  <p class="result">Try again.</p>
+import {Component} from '@angular/core';
+
+@Component({
+  selector: 'app-grade',
+  template: `
+    <p>Score: {{ score }}</p>
+    @if (score >= 90) {
+      <p class="result">Excellent!</p>
+    } @else if (score >= 50) {
+      <p class="result">You passed.</p>
+    } @else {
+      <p class="result">Try again.</p>
+    }
+    <button type="button" (click)="score = score + 10">+10</button>
+    <button type="button" (click)="score = score - 30">-30</button>
+  `,
+})
+export class ControlFlowGrade {
+  score = 70;
 }
 ```
 <!-- prettier-ignore-end -->
 
-With a score of 70, the page shows "You passed.". The full component is in `src/app/06-control-flow/grade/grade.ts`.
+With a score of 70, the page shows "You passed.". Click "+10" twice and it shows "Excellent!"; click "-30" and it shows "Try again.".
 
 ### Giving the condition a name with `as`
 
@@ -134,26 +147,57 @@ The name `city` exists only inside this `@if` block.
 `@for (item of list; track key)` repeats its content once for each item of `list`. Inside the content, `item` is the current item.
 
 <!-- prettier-ignore-start -->
-<!-- example: src/app/06-control-flow/fruit-list/fruit-list.ts#loop -->
+<!-- example: src/app/06-control-flow/fruit-list/fruit-list.ts -->
 
 ```html
-@for (fruit of fruits; track fruit.id) {
-  <li [class.odd]="$odd">
-    {{ $index + 1 }}. {{ fruit.name }}
-    @if ($first) {
-      (first)
+import {Component} from '@angular/core';
+
+interface Fruit {
+  id: number;
+  name: string;
+}
+
+@Component({
+  selector: 'app-fruit-list',
+  template: `
+    <ul>
+      @for (fruit of fruits; track fruit.id) {
+        <li [class.odd]="$odd">
+          {{ $index + 1 }}. {{ fruit.name }}
+          @if ($first) {
+            (first)
+          }
+          @if ($last) {
+            (last of {{ $count }})
+          }
+        </li>
+      } @empty {
+        <li>No fruit left.</li>
+      }
+    </ul>
+    <button type="button" (click)="removeFirst()">Eat the first fruit</button>
+  `,
+  styles: `
+    .odd {
+      background: #eee;
     }
-    @if ($last) {
-      (last of {{ $count }})
-    }
-  </li>
-} @empty {
-  <li>No fruit left.</li>
+  `,
+})
+export class ControlFlowFruitList {
+  fruits: Fruit[] = [
+    {id: 1, name: 'Apple'},
+    {id: 2, name: 'Banana'},
+    {id: 3, name: 'Cherry'},
+  ];
+
+  removeFirst() {
+    this.fruits = this.fruits.slice(1);
+  }
 }
 ```
 <!-- prettier-ignore-end -->
 
-The full component is in `src/app/06-control-flow/fruit-list/fruit-list.ts`. It shows:
+`slice(1)` is a JavaScript array method: it returns a new array without the first item. The page shows:
 
 ```text
 1. Apple (first)
@@ -212,42 +256,78 @@ An `@empty` block right after the `@for` content is shown when the list has no i
 `@switch` compares one value with several possible values. It shows the content of the `@case` whose value is equal (Angular uses `===`).
 
 <!-- prettier-ignore-start -->
-<!-- example: src/app/06-control-flow/traffic-light/traffic-light.ts#switch -->
+<!-- example: src/app/06-control-flow/traffic-light/traffic-light.ts -->
 
 ```html
-@switch (light) {
-  @case ('red') {
-    <p>Stop.</p>
+import {Component} from '@angular/core';
+
+type Light = 'red' | 'yellow' | 'green';
+
+@Component({
+  selector: 'app-traffic-light',
+  template: `
+    @switch (light) {
+      @case ('red') {
+        <p>Stop.</p>
+      }
+      @case ('yellow') {
+        <p>Get ready.</p>
+      }
+      @case ('green') {
+        <p>Go!</p>
+      }
+      @default never;
+    }
+    <button type="button" (click)="next()">Next light</button>
+  `,
+})
+export class ControlFlowTrafficLight {
+  light: Light = 'red';
+
+  next() {
+    if (this.light === 'red') {
+      this.light = 'green';
+    } else if (this.light === 'green') {
+      this.light = 'yellow';
+    } else {
+      this.light = 'red';
+    }
   }
-  @case ('yellow') {
-    <p>Get ready.</p>
-  }
-  @case ('green') {
-    <p>Go!</p>
-  }
-  @default never;
 }
 ```
 <!-- prettier-ignore-end -->
 
 - There is no fall-through. You do not write `break` as in JavaScript.
 - If no `@case` matches and there is no `@default`, nothing is shown.
-- `@default never;` is optional. It tells Angular: "the cases above cover every possible value". Here `light` has the TypeScript type `'red' | 'yellow' | 'green'`. If you forget one of these cases, the build fails (see part 7). This check works on a plain field or variable, not on a function call.
+- `@default never;` is optional. It tells Angular: "the cases above cover every possible value". Here `light` has the TypeScript type `Light`, which is `'red' | 'yellow' | 'green'` (a union type, see [chapter 3](03-typescript-you-need.md#union-types)). If you forget one of these cases, the build fails (see part 7). This check works on a plain field or variable, not on a function call.
 
 Two `@case` lines in a row share one content. `@default` catches every other value:
 
 <!-- prettier-ignore-start -->
-<!-- example: src/app/06-control-flow/weekend/weekend.ts#switch -->
+<!-- example: src/app/06-control-flow/weekend/weekend.ts -->
 
 ```html
-@switch (day) {
-  @case ('Saturday')
-  @case ('Sunday') {
-    <p class="kind">Weekend. Time to rest.</p>
-  }
-  @default {
-    <p class="kind">A work day.</p>
-  }
+import {Component} from '@angular/core';
+
+@Component({
+  selector: 'app-weekend',
+  template: `
+    <p>Today is {{ day }}.</p>
+    @switch (day) {
+      @case ('Saturday')
+      @case ('Sunday') {
+        <p class="kind">Weekend. Time to rest.</p>
+      }
+      @default {
+        <p class="kind">A work day.</p>
+      }
+    }
+    <button type="button" (click)="day = 'Sunday'">Sunday</button>
+    <button type="button" (click)="day = 'Monday'">Monday</button>
+  `,
+})
+export class ControlFlowWeekend {
+  day = 'Saturday';
 }
 ```
 <!-- prettier-ignore-end -->
@@ -302,7 +382,7 @@ export class ControlFlowFlakyWidget {
       <app-flaky-widget />
     } @error {
       <p>Problem: {{ $error.message }}</p>
-      <button (click)="$reset()">Try again</button>
+      <button type="button" (click)="$reset()">Try again</button>
     }
     <p>The rest of the page still works.</p>
   `,
@@ -379,7 +459,7 @@ export class ControlFlowTaskList {
 <h2>My tasks: {{ done }} of {{ tasks.length }} done</h2>
 
 <input #title placeholder="New task" />
-<button class="add" (click)="add(title.value); title.value = ''">Add</button>
+<button type="button" class="add" (click)="add(title.value); title.value = ''">Add</button>
 
 <ul>
   @for (task of tasks; track task.id) {
@@ -397,9 +477,9 @@ export class ControlFlowTaskList {
         }
       }
       @if (task.status === 'done') {
-        <button (click)="remove(task)">Remove</button>
+        <button type="button" (click)="remove(task)">Remove</button>
       } @else {
-        <button (click)="nextStep(task)">Next step</button>
+        <button type="button" (click)="nextStep(task)">Next step</button>
       }
     </li>
   } @empty {
@@ -431,19 +511,29 @@ What happens:
 5. When you remove every task, `@empty` shows "Nothing to do. Add a task above.".
 6. The methods never change the old array. They create a new one (`[...this.tasks, ...]`, `map`, `filter`). This is a good habit: every change is a new value, so it is clear for Angular (and for you) that something changed.
 
+The three dots `...` are JavaScript's **spread syntax**. It copies all items of an array, or all properties of an object, into a new one:
+
+- `[...this.tasks, newTask]` makes a new array with all old tasks plus `newTask` at the end.
+- `{...t, status}` makes a new object with all properties of `t`, and then sets `status`. Writing `status` alone is short for `status: status` (a property with the same name as the variable).
+- `{id: this.nextId, title, status: 'todo'}` uses the same short form: `title` means `title: title`.
+
 The test file `task-list.spec.ts` adds a task, moves it through its steps, and removes all tasks.
 
 ## 7. Common mistakes
 
 ### Forgetting `track`
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 @for (fruit of fruits) {
-<li>{{ fruit }}</li>
+  <li>{{ fruit }}</li>
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 The build fails:
 
@@ -477,13 +567,17 @@ Fix: add a `track` expression, usually a unique `id`:
 
 JavaScript has both `for...in` and `for...of`. `@for` accepts only `of`.
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 @for (fruit in fruits; track fruit) {
-<li>{{ fruit }}</li>
+  <li>{{ fruit }}</li>
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 ```text
 ✘ [ERROR] NG5002: Cannot parse expression. @for loop expression must match the pattern "<identifier> of <expression>" [plugin angular-compiler]
@@ -493,15 +587,19 @@ Fix: write `@for (fruit of fruits; track fruit.id)`, as in the fixed code above.
 
 ### Forgetting the `@` before `else`
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 @if (loggedIn) {
-<p>Welcome back!</p>
+  <p>Welcome back!</p>
 } else {
-<p>Please log in.</p>
+  <p>Please log in.</p>
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 Without `@`, Angular reads `else {` as normal text, and the `{` confuses it:
 
@@ -526,7 +624,7 @@ import {Component} from '@angular/core';
     } @else {
       <p>Please log in.</p>
     }
-    <button (click)="toggle()">Log in / Log out</button>
+    <button type="button" (click)="toggle()">Log in / Log out</button>
   `,
 })
 export class ControlFlowLoginStatus {
@@ -540,15 +638,23 @@ export class ControlFlowLoginStatus {
 
 ### Missing a case after `@default never;`
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
-@switch (light) { @case ('red') {
-<p>Stop.</p>
-} @case ('green') {
-<p>Go!</p>
-} @default never; }
+@switch (light) {
+  @case ('red') {
+    <p>Stop.</p>
+  }
+  @case ('green') {
+    <p>Go!</p>
+  }
+  @default never;
+}
 ```
+
+<!-- prettier-ignore-end -->
 
 `light` can also be `'yellow'`, but no `@case` handles it:
 
@@ -579,13 +685,17 @@ Fix: add the missing `@case ('yellow')`:
 
 ### Using `track $index` for a list that changes
 
+<!-- prettier-ignore-start -->
+
 <!-- wrong -->
 
 ```html
 @for (fruit of fruits; track $index) {
-<li>{{ fruit.name }} <input placeholder="Note" /></li>
+  <li>{{ fruit.name }} <input placeholder="Note" /></li>
 }
 ```
+
+<!-- prettier-ignore-end -->
 
 There is no error. But when you remove the first fruit, Angular thinks row 0 is still there (index 0 still exists) and puts "Banana" into it. A note the user typed for "Apple" now stands next to "Banana". Fix: track by a unique field, `track fruit.id`.
 
@@ -627,7 +737,7 @@ interface Message {
       }
     </ol>
     @if (messages.length > 0) {
-      <button (click)="deleteAll()">Delete all</button>
+      <button type="button" (click)="deleteAll()">Delete all</button>
     }
   `,
 })
