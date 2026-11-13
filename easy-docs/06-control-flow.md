@@ -50,18 +50,18 @@ export class ControlFlowLoginStatus {
 }
 ```
 
-| Line                           | What it does                                                                                             |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------- |
-| `import { Component } ...`     | Loads the `@Component` decorator from Angular.                                                           |
-| `selector: 'app-login-status'` | The tag name you use to place this component in another template.                                        |
-| `@if (loggedIn) {`             | Starts an `@if` block. Angular reads `loggedIn`. If the value is true, it shows the content up to `}`.   |
-| `<p>Welcome back!</p>`         | Content of the `@if` block.                                                                              |
-| `} @else {`                    | Closes the `@if` content and starts the `@else` block. Its content shows when the condition is not true. |
-| `<p>Please log in.</p>`        | Content of the `@else` block.                                                                            |
-| `}`                            | Closes the `@else` block.                                                                                |
-| `<button (click)="toggle()">`  | Event binding from chapter 05: a click calls `toggle()`.                                                 |
-| `loggedIn = false;`            | A field of the class. At the start the user is not logged in, so the page shows "Please log in.".        |
-| `toggle() { ... }`             | Changes `loggedIn` to the opposite value. Angular then updates the page and shows the other block.       |
+| Line                                        | What it does                                                                                             |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `import { Component } ...`                  | Loads the `@Component` decorator from Angular.                                                           |
+| `selector: 'app-login-status'`              | The tag name you use to place this component in another template.                                        |
+| `@if (loggedIn) {`                          | Starts an `@if` block. Angular reads `loggedIn`. If the value is true, it shows the content up to `}`.   |
+| `<p>Welcome back!</p>`                      | Content of the `@if` block.                                                                              |
+| `} @else {`                                 | Closes the `@if` content and starts the `@else` block. Its content shows when the condition is not true. |
+| `<p>Please log in.</p>`                     | Content of the `@else` block.                                                                            |
+| `}`                                         | Closes the `@else` block.                                                                                |
+| `<button type="button" (click)="toggle()">` | Event binding from chapter 05: a click calls `toggle()`.                                                 |
+| `loggedIn = false;`                         | A field of the class. At the start the user is not logged in, so the page shows "Please log in.".        |
+| `toggle() { ... }`                          | Changes `loggedIn` to the opposite value. Angular then updates the page and shows the other block.       |
 
 Every example in this chapter has a test file next to it (for example `login-status.spec.ts`). The tests click the buttons and check what the page shows. [Testing](19-testing.md) explains tests in depth.
 
@@ -92,7 +92,7 @@ You can chain any number of `@else if` blocks and at most one `@else` at the end
 <!-- prettier-ignore-start -->
 <!-- example: src/app/06-control-flow/grade/grade.ts -->
 
-```html
+```ts
 import {Component} from '@angular/core';
 
 @Component({
@@ -149,7 +149,7 @@ The name `city` exists only inside this `@if` block.
 <!-- prettier-ignore-start -->
 <!-- example: src/app/06-control-flow/fruit-list/fruit-list.ts -->
 
-```html
+```ts
 import {Component} from '@angular/core';
 
 interface Fruit {
@@ -258,7 +258,7 @@ An `@empty` block right after the `@for` content is shown when the list has no i
 <!-- prettier-ignore-start -->
 <!-- example: src/app/06-control-flow/traffic-light/traffic-light.ts -->
 
-```html
+```ts
 import {Component} from '@angular/core';
 
 type Light = 'red' | 'yellow' | 'green';
@@ -306,7 +306,7 @@ Two `@case` lines in a row share one content. `@default` catches every other val
 <!-- prettier-ignore-start -->
 <!-- example: src/app/06-control-flow/weekend/weekend.ts -->
 
-```html
+```ts
 import {Component} from '@angular/core';
 
 @Component({

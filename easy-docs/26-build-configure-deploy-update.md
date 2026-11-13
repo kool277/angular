@@ -85,7 +85,7 @@ You do not create these files by hand. This command creates them:
 ng generate environments
 ```
 
-It creates `src/environments/environment.ts`, and one more file for every configuration of the `build` target except the default one (`production`). In a new app that is `environment.development.ts`. If you added the `uz` configuration in [chapter 24](24-i18n.md), you also get `environment.uz.ts`. Each new file contains only `export const environment = {};`. Fill the two files with the settings shown above.
+It creates `src/environments/environment.ts`, and one more file for every configuration of the `build` target except the default one (`production`). In a new app that is `environment.development.ts`. If you added the `uz` configuration in [chapter 24](24-i18n.md), you also get `environment.uz.ts`. Each new file contains only `export const environment = {};`. Fill every one of them with the settings shown above. For `environment.uz.ts`, copy the values of `environment.ts`. A file that stays `{}` breaks the build of its configuration with `TS2339: Property 'apiUrl' does not exist on type '{}'`.
 
 Where is the import path from? In the examples workspace of this guide, the `environments` folder sits next to the component folder, so the path is `'../environments/environment'`. In your app the folder is `src/environments/`. Count the folders from your component file: a component in `src/app/` imports `'../environments/environment'`, a component in `src/app/api-banner/` imports `'../../environments/environment'`.
 
@@ -527,7 +527,7 @@ export const environment: Environment = {
 };
 ```
 
-Add `: Environment` and the import to `environment.development.ts` too. Now TypeScript reports an error if a file misses a key or has a wrong type.
+Add `: Environment` and the import to every other environment file too: `environment.development.ts`, and `environment.uz.ts` if you have it. Now TypeScript reports an error if a file misses a key or has a wrong type.
 
 Why a separate file for the type? A shorter idea is `import {environment as production} from './environment';` in the staging file, with the type `typeof production`. The unit test passes, but `ng build -c staging` fails: the file replacement puts `environment.staging.ts` in the place of `environment.ts`, so the staging file now imports itself:
 

@@ -238,6 +238,7 @@ describe('server rendering with hydration', () => {
 ```
 
 - `ngh="0"` on an element and `<script id="ng-state">` at the end of the page tell the browser how the HTML belongs to the components.
+- **Serialized** means turned into text. The server writes the app's state (for example data it loaded) as JSON text into that script, so the browser can read it back instead of loading it again.
 - `jsaction="click:;"` is for **event replay**. A small script in the page records clicks and other events that happen **before** hydration is finished. After hydration, Angular runs ("replays") them. So a quick user who clicks "Like" before the JavaScript has loaded does not lose the click. Event replay is on by default with `provideClientHydration()`.
 
 Hydration only works if the browser's first render gives **exactly** the same HTML as the server's. So:

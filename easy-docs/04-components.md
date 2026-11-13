@@ -148,6 +148,12 @@ export class CompRecipePage {}
 2. **Add it to `imports`** in the decorator. `imports` lists the components (and later directives and pipes) that this template may use.
 3. **Write its selector** in the template: `<app-recipe-card />`.
 
+> **Try any example of this guide in your own app.** Create the example's file (or files) in a
+> folder under `src/app/` of the app from [chapter 2](02-install-and-first-app.md). Then do these
+> three steps in `src/app/app.ts`: import the example's class, add it to the `imports` of `App`,
+> and write its selector in `src/app/app.html`. Run `ng serve` and open the page. The chapters
+> only repeat these steps when an example needs something more.
+
 Components that can be used this way, by importing them directly, are called **standalone** components. All components are standalone by default. (Older Angular code groups components in `NgModule`s instead; [chapter 27](27-smaller-topics.md) shows how to read such code.)
 
 `<app-recipe-card />` closes itself with `/>`. Angular allows this for components, even though HTML does not allow it for most elements. Use the short form when the element has no content.

@@ -302,7 +302,7 @@ import {Component} from '@angular/core';
 
 Write a component with the selector `app-greeting-card` and the class name `IntroGreetingCard`. It shows a heading `Hello, Amina!` (use your own name) and below it a paragraph `I am learning Angular.`
 
-You have no Angular project yet. Write the component in any text file, or on paper. After [chapter 2](02-install-and-first-app.md) you can put it into your project and see it in the browser.
+You have no Angular project yet. Write the component in any text file, or on paper. After [chapter 2](02-install-and-first-app.md) you can put it into your project and see it in the browser: add it the same way as chapter 2 adds its `Welcome` component (a file under `src/app/`, the class in the `imports` of `App`, and the selector in `app.html`).
 
 Hint: start from the [smallest example](#4-smallest-example). A template on two lines needs backticks.
 

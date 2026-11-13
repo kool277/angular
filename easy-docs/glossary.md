@@ -162,7 +162,7 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 
 ## F
 
-- **fake timers**: (existing entry; first use is now explained earlier) Vitest's replacement clock (`vi.useFakeTimers()`): time moves only when the test calls `vi.advanceTimersByTime(ms)` or `await vi.advanceTimersByTimeAsync(ms)`. First explained in [RxJS interop](18-rxjs-interop.md#observables-in-two-minutes); in depth in [Testing](19-testing.md#timers-fake-time).
+- **fake timers**: Vitest's replacement clock (`vi.useFakeTimers()`): time moves only when the test calls `vi.advanceTimersByTime(ms)` or `await vi.advanceTimersByTimeAsync(ms)`. First explained in [RxJS interop](18-rxjs-interop.md#observables-in-two-minutes); in depth in [Testing](19-testing.md#timers-fake-time).
 - **`fakeAsync`**: An older zone.js helper that runs a test with a fake clock (`tick`, `flush`). Experimental in Angular 22 and no longer recommended. See [Testing](19-testing.md#in-older-projects-karma-jasmine-and-zonejs-helpers).
 - **fallback content**: Content written inside `<ng-content>` that is shown when the parent gives nothing for that slot. See [Content projection and queries](12-content-projection-and-queries.md#fallback-content).
 - **fetch**: The browser's own function for sending HTTP requests. Angular's `HttpClient` uses it by default. See [HTTP and async data](17-http-and-async-data.md#resource-any-async-work-as-signals).
@@ -413,6 +413,7 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 - **semantic HTML**: Using the HTML element that matches the meaning (`<button>`, `<a href>`, `<h2>`, `<label>`), so roles and keyboard support come built in. See [Accessibility and Angular Aria](22-accessibility-and-angular-aria.md#basics-semantic-html-first).
 - **semantic versioning (major.minor.patch)**: Version numbers where major may break code, minor adds features, patch fixes bugs. See [Build, configure, deploy and update](26-build-configure-deploy-update.md#updating-angular).
 - **SEO (search engine optimization)**: Making pages easy for search engines to read and rank well. See [Server rendering and hydration](21-server-rendering-and-hydration.md#3-why-you-need-it).
+- **serialized**: Turned into text, for example an object written as JSON, so that it can be stored or sent and read back later. See [Server rendering and hydration](21-server-rendering-and-hydration.md).
 - **server (backend)**: The program on another computer that stores the data and answers requests. See [HTTP and async data](17-http-and-async-data.md#3-why-you-need-it).
 - **server-side rendering (SSR)**: Running the Angular app on a server for each request, so the browser receives finished HTML. See [Server rendering and hydration](21-server-rendering-and-hydration.md#5-how-it-works).
 - **server-side request forgery (SSRF)**: Tricks that make a server send requests to places it should not; Angular's SSR server answers only host names listed in `security.allowedHosts`. See [Security](25-security.md#attacks-through-http).
@@ -428,7 +429,7 @@ explains it first. Symbols such as `@` and `$` are ignored in the order.
 - **source locale**: The language you write your templates in; `en-US` unless `angular.json` says otherwise. See [Internationalization (i18n)](24-i18n.md#the-locale-and-locale-aware-pipes).
 - **spec file**: A `.spec.ts` file with the tests for the file of the same name. See [Testing](19-testing.md#the-tools).
 - **spread syntax (`...`)**: JavaScript syntax that copies all items of an array or all properties of an object into a new one: `[...list, x]`, `{...task, status}`. See [Control flow: @if, @for, @switch](06-control-flow.md#6-a-realistic-example).
-- **spy**: (existing entry; first use is now in chapter 18's exercise) A function that records its calls, made with `vi.fn()` or `vi.spyOn(object, 'method')`. Briefly in [RxJS interop](18-rxjs-interop.md#8-try-it-yourself); in depth in [Testing](19-testing.md#fakes-and-spies).
+- **spy**: A function that records its calls, made with `vi.fn()` or `vi.spyOn(object, 'method')`. Briefly in [RxJS interop](18-rxjs-interop.md#8-try-it-yourself); in depth in [Testing](19-testing.md#fakes-and-spies).
 - **`srcset`**: An `<img>` attribute with a list of image files of different sizes, from which the browser picks the best one. See [Performance, @defer and zoneless](20-performance-defer-and-zoneless.md#ngoptimizedimage-images-in-the-right-order-and-size).
 - **stable (app)**: An app with no work left to do: no pending HTTP requests, navigation or other tracked tasks. The server sends the page when the app is stable. See [Server rendering and hydration](21-server-rendering-and-hydration.md#4-smallest-example).
 - **stagger**: Starting the animations of list items one after another with a small delay. See [Animations](23-animations.md#6-a-realistic-example).

@@ -271,7 +271,7 @@ export const PRODUCTS: Product[] = [
 ];
 ```
 
-The easiest way to read it is an **input** with the same name. Turn this on once with `withComponentInputBinding()`:
+The easiest way to read the route parameter `id` is an **input** with the same name. Turn this on once with `withComponentInputBinding()`:
 
 <!-- example: src/app/15-routing/shop/shop.config.ts -->
 

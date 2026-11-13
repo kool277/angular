@@ -715,37 +715,41 @@ export const testingRoutes: Routes = [
 ];
 ```
 
-<!-- example: src/app/19-testing/routing/pages.spec.ts#imports -->
+`RouterTestingHarness` from `@angular/router/testing` creates a router outlet and navigates. The test first registers the routes with `provideRouter` in `beforeEach`; without that, every navigation fails with `NG04002: Cannot match any routes`:
+
+<!-- example: src/app/19-testing/routing/pages.spec.ts -->
 
 ```ts
 import {TestBed} from '@angular/core/testing';
 import {Router, provideRouter, withComponentInputBinding} from '@angular/router';
 import {RouterTestingHarness} from '@angular/router/testing';
 import {TestingTeaMenu, TestingTeaPage, testingRoutes} from './pages';
-```
 
-`RouterTestingHarness` from `@angular/router/testing` creates a router outlet and navigates:
+describe('tea routes', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideRouter(testingRoutes, withComponentInputBinding())],
+    });
+  });
 
-<!-- example: src/app/19-testing/routing/pages.spec.ts#harness -->
+  it('opens a tea page from a URL', async () => {
+    const harness = await RouterTestingHarness.create();
+    const page = await harness.navigateByUrl('/teas/mint', TestingTeaPage);
 
-```ts
-it('opens a tea page from a URL', async () => {
-  const harness = await RouterTestingHarness.create();
-  const page = await harness.navigateByUrl('/teas/mint', TestingTeaPage);
+    expect(page.id()).toBe('mint');
+    expect(harness.routeNativeElement?.textContent).toBe('Tea: mint');
+  });
 
-  expect(page.id()).toBe('mint');
-  expect(harness.routeNativeElement?.textContent).toBe('Tea: mint');
-});
+  it('follows a routerLink', async () => {
+    const harness = await RouterTestingHarness.create('/');
+    expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(TestingTeaMenu);
 
-it('follows a routerLink', async () => {
-  const harness = await RouterTestingHarness.create('/');
-  expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(TestingTeaMenu);
+    harness.routeNativeElement!.querySelector('a')!.click();
+    await harness.fixture.whenStable();
 
-  harness.routeNativeElement!.querySelector('a')!.click();
-  await harness.fixture.whenStable();
-
-  expect(TestBed.inject(Router).url).toBe('/teas/green');
-  expect(harness.routeNativeElement?.textContent).toBe('Tea: green');
+    expect(TestBed.inject(Router).url).toBe('/teas/green');
+    expect(harness.routeNativeElement?.textContent).toBe('Tea: green');
+  });
 });
 ```
 
