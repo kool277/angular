@@ -119,8 +119,11 @@ function anchorsOf(markdown) {
     if (inFence) continue;
     const heading = line.match(/^#{1,6}\s+(.*?)\s*#*\s*$/);
     if (!heading) continue;
+    // HTML tags are dropped, but text in code spans stays (`<iframe>` gives "iframe").
     const base = heading[1]
-      .replace(/<[^>]+>/g, '')
+      .split(/(`[^`]*`)/)
+      .map((part) => (part.startsWith('`') ? part : part.replace(/<[^>]+>/g, '')))
+      .join('')
       .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
       .toLowerCase()
       .replace(/[^\p{L}\p{N}\s_-]/gu, '')
