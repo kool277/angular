@@ -1,0 +1,23 @@
+[ngTabList] {
+  display: flex;
+  gap: 8px;
+  padding: 0;
+  list-style: none;
+}
+
+[ngTab] {
+  padding: 4px 12px;
+  cursor: pointer;
+}
+
+[ngTab][aria-selected='true'] {
+  border-bottom: 3px solid royalblue;
+}
+
+[ngTab]:focus-visible {
+  outline: 2px solid royalblue;
+}
+
+[ngTabPanel][inert] {
+  display: none;
+}

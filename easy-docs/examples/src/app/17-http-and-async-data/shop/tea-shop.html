@@ -1,0 +1,47 @@
+<!-- #docregion list -->
+<section>
+  <h2>Teas</h2>
+  @if (teas.error()) {
+    <p class="error">Could not load the teas.</p>
+    <button type="button" (click)="teas.reload()">Try again</button>
+  } @else {
+    <ul [class.loading]="teas.isLoading()">
+      @for (tea of teas.value(); track tea.id) {
+        <li>
+          <button type="button" (click)="selectedId.set(tea.id)">{{ tea.name }}</button>
+        </li>
+      } @empty {
+        <li>Loading…</li>
+      }
+    </ul>
+  }
+</section>
+<!-- #enddocregion list -->
+
+<!-- #docregion details -->
+<section class="details">
+  @switch (selected.status()) {
+    @case ('idle') {
+      <p>Choose a tea.</p>
+    }
+    @case ('loading') {
+      <p>Loading the details…</p>
+    }
+    @case ('error') {
+      <p class="error">Could not load this tea.</p>
+    }
+    @default {
+      @if (selected.hasValue()) {
+        <h3>{{ selected.value().name }}</h3>
+        <p>{{ selected.value().price }} €</p>
+      }
+    }
+  }
+</section>
+<!-- #enddocregion details -->
+
+<section>
+  <input #name placeholder="New tea" />
+  <button type="button" (click)="add(name.value)">Add</button>
+  <p class="message">{{ message() }}</p>
+</section>

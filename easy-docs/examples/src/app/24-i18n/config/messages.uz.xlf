@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+  <file source-language="en-US" target-language="uz" datatype="plaintext" original="ng2.template">
+    <body>
+      <trans-unit id="homeTitle" datatype="html">
+        <source>Welcome to Samarkand!</source>
+        <target>Samarqandga xush kelibsiz!</target>
+      </trans-unit>
+      <trans-unit id="8401591793890932474" datatype="html">
+        <source>Hello, <x id="INTERPOLATION" equiv-text="{{ visitor() }}"/>! Your ticket is ready.</source>
+        <target>Salom, <x id="INTERPOLATION" equiv-text="{{ visitor() }}"/>! Chiptangiz tayyor.</target>
+      </trans-unit>
+      <trans-unit id="ticketStatus" datatype="html">
+        <source>Valid for one day</source>
+        <target>Bir kun amal qiladi</target>
+      </trans-unit>
+      <trans-unit id="540461368404685598" datatype="html">
+        <source>{VAR_PLURAL, plural, =0 {No tickets yet.} =1 {One ticket.} other {<x id="INTERPOLATION"/> tickets.}}</source>
+        <target>{VAR_PLURAL, plural, =0 {Hali chipta yoʻq.} other {<x id="INTERPOLATION"/> ta chipta.}}</target>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

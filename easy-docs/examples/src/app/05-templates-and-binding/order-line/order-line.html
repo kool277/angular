@@ -1,0 +1,24 @@
+@let total = price * quantity;
+@let soldOut = quantity === stock;
+
+<h3>{{ product }}</h3>
+<p class="price">{{ price }} UZS each</p>
+
+<div class="quantity">
+  <button type="button" aria-label="One less" [disabled]="quantity === 0" (click)="decrease()">
+    −
+  </button>
+  <span>{{ quantity }}</span>
+  <button type="button" aria-label="One more" [disabled]="soldOut" (click)="increase()">+</button>
+</div>
+
+<div class="stock" [class.sold-out]="soldOut">
+  <div class="stock-bar" [style.width.%]="(quantity / stock) * 100"></div>
+</div>
+<p class="total">Total: {{ total }} UZS</p>
+
+<label>
+  Note for the shop:
+  <input #noteInput (keyup.enter)="saveNote(noteInput.value)" />
+</label>
+<p class="note">Your note: {{ note || 'none' }}</p>

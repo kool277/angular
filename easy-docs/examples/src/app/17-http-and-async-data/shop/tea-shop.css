@@ -1,0 +1,12 @@
+.loading {
+  opacity: 0.5;
+}
+
+.error {
+  color: darkred;
+}
+
+.details {
+  border: 1px solid #ccc;
+  padding: 8px;
+}

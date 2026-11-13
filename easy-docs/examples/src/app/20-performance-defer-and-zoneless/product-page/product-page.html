@@ -1,0 +1,20 @@
+<h2>Hiking boots</h2>
+<img ngSrc="/boots.jpg" width="600" height="400" priority alt="Brown hiking boots" />
+<p>Light boots for long walks. 89 €</p>
+
+<button type="button" #sizeButton>Size guide</button>
+@defer (on interaction(sizeButton); prefetch on hover(sizeButton)) {
+  <app-perf-size-guide />
+}
+
+<section aria-live="polite">
+  @defer (on viewport; prefetch on idle) {
+    <app-perf-reviews />
+  } @placeholder {
+    <p>Reviews</p>
+  } @loading (minimum 300ms) {
+    <p>Loading reviews…</p>
+  } @error {
+    <p>The reviews could not be loaded. Please reload the page.</p>
+  }
+</section>

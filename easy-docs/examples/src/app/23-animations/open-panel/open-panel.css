@@ -1,0 +1,27 @@
+/* #docregion panel */
+.panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0.4;
+  transition:
+    grid-template-rows 300ms ease-out,
+    opacity 300ms ease-out;
+}
+
+.panel.open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.inner {
+  overflow: hidden;
+}
+/* #enddocregion panel */
+
+/* #docregion reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    transition: none;
+  }
+}
+/* #enddocregion reduced-motion */

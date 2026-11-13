@@ -1,0 +1,14 @@
+/* #docregion slide-in */
+.slide-in {
+  transition:
+    opacity 300ms ease-out,
+    transform 300ms ease-out;
+}
+
+@starting-style {
+  .slide-in {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+/* #enddocregion slide-in */

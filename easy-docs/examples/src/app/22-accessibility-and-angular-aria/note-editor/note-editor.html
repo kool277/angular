@@ -1,0 +1,16 @@
+<h2>New note</h2>
+
+<div ngToolbar aria-label="Text format" aria-controls="note-text">
+  <button type="button" ngToolbarWidget [aria-pressed]="bold()" (click)="bold.set(!bold())">
+    Bold
+  </button>
+  <button type="button" ngToolbarWidget [aria-pressed]="italic()" (click)="italic.set(!italic())">
+    Italic
+  </button>
+  <button type="button" ngToolbarWidget (click)="save()">Save</button>
+</div>
+
+<label for="note-text">Text of the note</label>
+<textarea id="note-text" [class.bold]="bold()" [class.italic]="italic()"></textarea>
+
+<p role="status">{{ status() }}</p>

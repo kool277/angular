@@ -1,0 +1,37 @@
+<!-- #docregion let -->
+@let done = doneCount();
+<h2>My tasks: {{ done }} of {{ tasks.length }} done</h2>
+<!-- #enddocregion let -->
+
+<input #title placeholder="New task" />
+<button class="add" (click)="add(title.value); title.value = ''">Add</button>
+
+<ul>
+  @for (task of tasks; track task.id) {
+    <li [class.done]="task.status === 'done'">
+      {{ task.title }}:
+      @switch (task.status) {
+        @case ('todo') {
+          <span>to do</span>
+        }
+        @case ('doing') {
+          <span>in progress</span>
+        }
+        @case ('done') {
+          <span>done</span>
+        }
+      }
+      @if (task.status === 'done') {
+        <button (click)="remove(task)">Remove</button>
+      } @else {
+        <button (click)="nextStep(task)">Next step</button>
+      }
+    </li>
+  } @empty {
+    <li>Nothing to do. Add a task above.</li>
+  }
+</ul>
+
+@if (tasks.length > 0 && done === tasks.length) {
+  <p class="party">All done. Well done!</p>
+}

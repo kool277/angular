@@ -1,0 +1,9 @@
+:host {
+  display: block;
+  padding: 8px;
+  border: 1px solid #ddd;
+}
+
+h3 {
+  margin: 0 0 4px;
+}

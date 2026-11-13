@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+  <file source-language="en-US" datatype="plaintext" original="ng2.template">
+    <body>
+      <trans-unit id="homeTitle" datatype="html">
+        <source>Welcome to Samarkand!</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/24-i18n/welcome/welcome.ts</context>
+          <context context-type="linenumber">6,7</context>
+        </context-group>
+        <note priority="1" from="description">Title of the home page</note>
+      </trans-unit>
+      <trans-unit id="8401591793890932474" datatype="html">
+        <source>Hello, <x id="INTERPOLATION" equiv-text="{{ visitor() }}"/>! Your ticket is ready.</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/24-i18n/welcome/welcome.ts</context>
+          <context context-type="linenumber">7,8</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="ticketStatus" datatype="html">
+        <source>Valid for one day</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/24-i18n/welcome/welcome.ts</context>
+          <context context-type="linenumber">14</context>
+        </context-group>
+        <note priority="1" from="description">Status line under the ticket</note>
+      </trans-unit>
+      <trans-unit id="540461368404685598" datatype="html">
+        <source>{VAR_PLURAL, plural, =0 {No tickets yet.} =1 {One ticket.} other {<x id="INTERPOLATION"/> tickets.}}</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/24-i18n/ticket-summary/ticket-summary.ts</context>
+          <context context-type="linenumber">8,10</context>
+        </context-group>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

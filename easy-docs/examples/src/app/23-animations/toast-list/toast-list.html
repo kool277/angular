@@ -1,0 +1,15 @@
+<button (click)="add('Ticket saved')">Save ticket</button>
+
+<ul class="toasts">
+  @for (toast of toasts(); track toast.id) {
+    <li
+      class="toast"
+      [style.--i]="$index"
+      animate.enter="toast-in"
+      (animate.leave)="slideAway($event)"
+    >
+      {{ toast.text }}
+      <button (click)="close(toast.id)" aria-label="Close">×</button>
+    </li>
+  }
+</ul>

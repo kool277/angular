@@ -1,0 +1,19 @@
+.quantity {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.stock {
+  height: 6px;
+  background: #eee;
+}
+
+.stock-bar {
+  height: 100%;
+  background: steelblue;
+}
+
+.sold-out .stock-bar {
+  background: firebrick;
+}

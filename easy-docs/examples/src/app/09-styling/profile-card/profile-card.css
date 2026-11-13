@@ -1,0 +1,32 @@
+/* #docregion host */
+:host {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 16px;
+  border-left: 6px solid var(--accent);
+}
+
+:host(.compact) {
+  padding: 4px;
+}
+/* #enddocregion host */
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  text-align: center;
+  line-height: 40px;
+}
+
+.name {
+  margin: 0;
+}
+
+.job {
+  margin: 0;
+  color: gray;
+}

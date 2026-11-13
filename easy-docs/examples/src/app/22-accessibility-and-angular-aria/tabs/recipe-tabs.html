@@ -1,0 +1,23 @@
+<div ngTabs>
+  <ul ngTabList [(selectedTab)]="selectedTab" aria-label="Recipe">
+    <li ngTab value="ingredients">Ingredients</li>
+    <li ngTab value="steps">Steps</li>
+    <li ngTab value="tips">Tips</li>
+  </ul>
+
+  <div ngTabPanel value="ingredients">
+    <ng-template ngTabContent>
+      <p>Rice, carrots, onions, lamb.</p>
+    </ng-template>
+  </div>
+  <div ngTabPanel value="steps">
+    <ng-template ngTabContent>
+      <p>Fry the meat, add the carrots, then the rice.</p>
+    </ng-template>
+  </div>
+  <div ngTabPanel value="tips">
+    <ng-template ngTabContent>
+      <p>Do not stir the rice.</p>
+    </ng-template>
+  </div>
+</div>

@@ -1,0 +1,21 @@
+<div ngAccordionGroup [multiExpandable]="false">
+  <h3>
+    <button type="button" ngAccordionTrigger [panel]="delivery" [expanded]="true">
+      How long does delivery take?
+    </button>
+  </h3>
+  <div ngAccordionPanel #delivery="ngAccordionPanel">
+    <ng-template ngAccordionContent>
+      <p>Two to four days.</p>
+    </ng-template>
+  </div>
+
+  <h3>
+    <button type="button" ngAccordionTrigger [panel]="returns">Can I return an item?</button>
+  </h3>
+  <div ngAccordionPanel #returns="ngAccordionPanel">
+    <ng-template ngAccordionContent>
+      <p>Yes, within 30 days.</p>
+    </ng-template>
+  </div>
+</div>

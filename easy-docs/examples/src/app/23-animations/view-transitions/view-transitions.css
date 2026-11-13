@@ -1,0 +1,16 @@
+/* Put these rules in src/styles.css (global styles), not in a component's styles. */
+@keyframes slide-from-right {
+  from {
+    transform: translateX(40px);
+  }
+}
+
+::view-transition-old(root) {
+  animation-duration: 200ms;
+}
+
+::view-transition-new(root) {
+  animation:
+    200ms ease-out both -ua-view-transition-fade-in,
+    200ms ease-out both slide-from-right;
+}

@@ -1,0 +1,5 @@
+<button (click)="toggle()">{{ shown() ? 'Hide' : 'Show' }} the note</button>
+
+@if (shown()) {
+  <p class="note" animate.enter="fade-in" animate.leave="fade-out">The museum opens at 9:00.</p>
+}

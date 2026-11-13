@@ -1,0 +1,21 @@
+[ngToolbar] {
+  display: flex;
+  gap: 4px;
+}
+
+[ngToolbarWidget][aria-pressed='true'] {
+  background: royalblue;
+  color: white;
+}
+
+label {
+  display: block;
+}
+
+.bold {
+  font-weight: bold;
+}
+
+.italic {
+  font-style: italic;
+}

@@ -1,0 +1,6 @@
+<p class="ternary">{{ lessons.length > 2 ? 'Busy week' : 'Quiet week' }}</p>
+<p class="nullish">Room: {{ room ?? 'not set yet' }}</p>
+<p class="optional">Teacher: {{ lessons[1].teacher?.name ?? 'unknown' }}</p>
+<p class="template-string">{{ `${lessons.length} lessons` }}</p>
+<p class="arrow">Done: {{ lessons.filter((lesson) => lesson.done).length }}</p>
+<button type="button" (click)="room = 'B12'; checks = checks + 1">Set room</button>

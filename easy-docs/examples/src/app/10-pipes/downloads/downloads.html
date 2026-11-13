@@ -1,0 +1,17 @@
+<table>
+  <tr>
+    <th>File</th>
+    <th>Size</th>
+    <th>Added</th>
+    <th>Progress</th>
+  </tr>
+  @for (file of files(); track file.id) {
+    <tr>
+      <td>{{ file.name | titlecase }}</td>
+      <td>{{ file.bytes | fileSize }}</td>
+      <td>{{ file.added | date: 'd MMM, HH:mm' : 'UTC' }}</td>
+      <td>{{ file.done | percent }}</td>
+    </tr>
+  }
+</table>
+<p>Total: {{ totalBytes() | fileSize: 2 }}</p>
